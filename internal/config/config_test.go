@@ -41,8 +41,8 @@ func TestPartialFlagOverride(t *testing.T) {
 }
 
 func TestConfigFileFallback(t *testing.T) {
-	os.Unsetenv("HASS_SERVER")
-	os.Unsetenv("HASS_TOKEN")
+	_ = os.Unsetenv("HASS_SERVER")
+	_ = os.Unsetenv("HASS_TOKEN")
 
 	// Keychain takes priority over the file (by design). Skip rather than
 	// delete real credentials — this test is reliable in CI where keychain is empty.

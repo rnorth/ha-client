@@ -24,7 +24,7 @@ func TestGetInfo(t *testing.T) {
 	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/config", r.URL.Path)
 		assert.Equal(t, "Bearer test-token", r.Header.Get("Authorization"))
-		json.NewEncoder(w).Encode(client.HAInfo{Version: "2024.1.0", LocationName: "Home"})
+		_ = json.NewEncoder(w).Encode(client.HAInfo{Version: "2024.1.0", LocationName: "Home"})
 	})
 
 	info, err := c.GetInfo()
@@ -36,7 +36,7 @@ func TestGetInfo(t *testing.T) {
 func TestListStates(t *testing.T) {
 	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/states", r.URL.Path)
-		json.NewEncoder(w).Encode([]client.State{
+		_ = json.NewEncoder(w).Encode([]client.State{
 			{EntityID: "light.desk", State: "on"},
 			{EntityID: "switch.fan", State: "off"},
 		})
@@ -51,7 +51,7 @@ func TestListStates(t *testing.T) {
 func TestGetState(t *testing.T) {
 	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/states/light.desk", r.URL.Path)
-		json.NewEncoder(w).Encode(client.State{EntityID: "light.desk", State: "on"})
+		_ = json.NewEncoder(w).Encode(client.State{EntityID: "light.desk", State: "on"})
 	})
 
 	state, err := c.GetState("light.desk")
@@ -64,7 +64,7 @@ func TestSetState(t *testing.T) {
 		assert.Equal(t, http.MethodPost, r.Method)
 		assert.Equal(t, "/api/states/light.desk", r.URL.Path)
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(client.State{EntityID: "light.desk", State: "off"})
+		_ = json.NewEncoder(w).Encode(client.State{EntityID: "light.desk", State: "off"})
 	})
 
 	state, err := c.SetState("light.desk", "off", nil)
@@ -75,7 +75,7 @@ func TestSetState(t *testing.T) {
 func TestListActions(t *testing.T) {
 	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/services", r.URL.Path)
-		json.NewEncoder(w).Encode([]client.ActionDomain{{Domain: "light"}})
+		_ = json.NewEncoder(w).Encode([]client.ActionDomain{{Domain: "light"}})
 	})
 
 	actions, err := c.ListActions()
@@ -89,7 +89,7 @@ func TestCallAction(t *testing.T) {
 		assert.Equal(t, http.MethodPost, r.Method)
 		assert.Equal(t, "/api/services/light/turn_on", r.URL.Path)
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode([]client.State{})
+		_ = json.NewEncoder(w).Encode([]client.State{})
 	})
 
 	err := c.CallAction("light", "turn_on", map[string]interface{}{"entity_id": "light.desk"})

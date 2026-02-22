@@ -48,7 +48,7 @@ var eventWatchCmd = &cobra.Command{
 				if json.Unmarshal(event, &pretty) == nil {
 					enc := json.NewEncoder(os.Stdout)
 					enc.SetIndent("", "  ")
-					enc.Encode(pretty)
+					_ = enc.Encode(pretty)
 				}
 				return true
 			})

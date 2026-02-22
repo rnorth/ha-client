@@ -1,0 +1,23 @@
+# .golangci.yml
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+  settings:
+    errcheck:
+      exclude-functions:
+        # Writing to io.Writer in a CLI is not actionable
+        - fmt.Fprint
+        - fmt.Fprintln
+        - fmt.Fprintf
+        # Best-effort cleanup on error paths
+        - (*github.com/gorilla/websocket.Conn).Close
+        - (*github.com/rnorth/ha-cli/internal/client.WSClient).Close
+
+run:
+  timeout: 5m

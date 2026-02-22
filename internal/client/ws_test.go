@@ -26,23 +26,23 @@ func mockWSServer(t *testing.T, token string, cmdType string, response interface
 		defer conn.Close()
 
 		// Auth required
-		conn.WriteJSON(map[string]string{"type": "auth_required", "ha_version": "2024.1"})
+		_ = conn.WriteJSON(map[string]string{"type": "auth_required", "ha_version": "2024.1"})
 
 		// Read auth message
 		var authMsg map[string]string
-		conn.ReadJSON(&authMsg)
+		_ = conn.ReadJSON(&authMsg)
 		if authMsg["access_token"] != token {
-			conn.WriteJSON(map[string]string{"type": "auth_invalid"})
+			_ = conn.WriteJSON(map[string]string{"type": "auth_invalid"})
 			return
 		}
-		conn.WriteJSON(map[string]string{"type": "auth_ok"})
+		_ = conn.WriteJSON(map[string]string{"type": "auth_ok"})
 
 		// Read command
 		var cmd client.WSMessage
-		conn.ReadJSON(&cmd)
+		_ = conn.ReadJSON(&cmd)
 		// Respond with result
 		resultData, _ := json.Marshal(response)
-		conn.WriteJSON(map[string]interface{}{
+		_ = conn.WriteJSON(map[string]interface{}{
 			"id":      cmd.ID,
 			"type":    "result",
 			"success": true,
