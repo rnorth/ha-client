@@ -9,13 +9,9 @@ import (
 	"testing"
 
 	"github.com/gorilla/websocket"
-	"github.com/pmezard/go-difflib/difflib"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-// blank import to promote go-difflib to direct dependency
-var _ = difflib.SplitLines
 
 var wsUpgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
 
