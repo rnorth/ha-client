@@ -118,10 +118,8 @@ func printColumns(w io.Writer, headers []string, rows [][]string) {
 
 	// Compute max width per column.
 	widths := make([]int, cols)
-	if headers != nil {
-		for i, h := range headers {
-			widths[i] = len(h)
-		}
+	for i, h := range headers {
+		widths[i] = len(h)
 	}
 	for _, row := range rows {
 		for i, cell := range row {
