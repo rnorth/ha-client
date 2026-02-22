@@ -1,6 +1,7 @@
 [tools]
 go = "1.25"
-goreleaser = "latest"
+goreleaser = "2.13.3"
+golangci-lint = "2.10.1"
 
 [tasks.build]
 description = "Build the ha-client binary"
