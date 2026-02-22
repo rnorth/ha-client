@@ -59,7 +59,7 @@ type EntityEntry struct {
 	AreaID   string `json:"area_id,omitempty" yaml:"area_id,omitempty"`
 	DeviceID string `json:"device_id,omitempty" yaml:"device_id,omitempty"`
 	Platform string `json:"platform,omitempty" yaml:"platform,omitempty"`
-	Disabled bool   `json:"disabled_by,omitempty" yaml:"disabled,omitempty"`
+	DisabledBy *string `json:"disabled_by,omitempty" yaml:"disabled_by,omitempty"`
 }
 
 type WSMessage struct {

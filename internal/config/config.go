@@ -82,16 +82,16 @@ func SaveToKeychain(server, token string) error {
 	return keyring.Set(keychainService, keychainToken, token)
 }
 
-// DeleteFromKeychain removes stored credentials.
+// DeleteFromKeychain removes stored credentials. Safe to call when already logged out.
 func DeleteFromKeychain() error {
-	errServer := keyring.Delete(keychainService, keychainServer)
-	errToken := keyring.Delete(keychainService, keychainToken)
-	// Also clear config file
-	_ = os.Remove(DefaultConfigPath())
-	if errServer != nil {
-		return errServer
+	for _, key := range []string{keychainServer, keychainToken} {
+		if err := keyring.Delete(keychainService, key); err != nil && err != keyring.ErrNotFound {
+			return err
+		}
 	}
-	return errToken
+	// Also clear config file (ignore missing file)
+	_ = os.Remove(DefaultConfigPath())
+	return nil
 }
 
 func SaveToFile(server, token, path string) error {
