@@ -17,6 +17,8 @@ jobs:
         # actions/checkout@v4
         with:
           fetch-depth: 0
+          # fetch-depth: 0 required — goreleaser uses full git history for
+          # version detection and changelog generation
 
       - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac
         # jdx/mise-action@v2
