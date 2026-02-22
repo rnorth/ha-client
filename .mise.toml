@@ -1,2 +1,19 @@
 [tools]
 go = "1.25"
+
+[tasks.build]
+description = "Build the ha-client binary"
+run = "go build -ldflags='-s -w' -o ha-client ."
+
+[tasks.test]
+description = "Run all tests"
+run = "go test ./... -v"
+
+[tasks.clean]
+description = "Remove build artifacts"
+run = "rm -f ha-client"
+
+[tasks.install]
+description = "Build and install to /usr/local/bin"
+depends = ["build"]
+run = "cp ha-client /usr/local/bin/ha-client"
