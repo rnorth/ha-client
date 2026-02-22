@@ -100,3 +100,16 @@ func TestListEntities(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.Equal(t, "light.desk", result[0].EntityID)
 }
+func TestGetEntityUniqueID(t *testing.T) {
+	entity := client.EntityEntry{EntityID: "automation.morning", UniqueID: "abc-123"}
+	srv := mockWSServer(t, "test-token", "config/entity_registry/get", entity)
+	defer srv.Close()
+
+	wsc, err := client.NewWSClient(wsURL(srv), "test-token")
+	require.NoError(t, err)
+	defer wsc.Close()
+
+	result, err := wsc.GetEntity("automation.morning")
+	require.NoError(t, err)
+	assert.Equal(t, "abc-123", result.UniqueID)
+}
