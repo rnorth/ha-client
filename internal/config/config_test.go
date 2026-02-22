@@ -7,6 +7,7 @@ import (
 	"github.com/rnorth/ha-cli/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zalando/go-keyring"
 )
 
 func TestFlagsTakePriority(t *testing.T) {
@@ -42,6 +43,12 @@ func TestPartialFlagOverride(t *testing.T) {
 func TestConfigFileFallback(t *testing.T) {
 	os.Unsetenv("HASS_SERVER")
 	os.Unsetenv("HASS_TOKEN")
+
+	// Keychain takes priority over the file (by design). Skip rather than
+	// delete real credentials — this test is reliable in CI where keychain is empty.
+	if s, _ := keyring.Get("ha-client", "server"); s != "" {
+		t.Skip("keychain has credentials; file-fallback test requires empty keychain")
+	}
 
 	dir := t.TempDir()
 	cfgFile := dir + "/config.yaml"

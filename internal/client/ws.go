@@ -3,6 +3,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -16,11 +17,12 @@ type WSClient struct {
 }
 
 func NewWSClient(serverURL, token string) (*WSClient, error) {
+	// Trim trailing slash so we never produce "//api/websocket".
+	wsURL := strings.TrimRight(serverURL, "/")
 	// Convert http:// → ws://, https:// → wss://
-	wsURL := serverURL
-	if len(wsURL) > 4 && wsURL[:5] == "http:" {
+	if strings.HasPrefix(wsURL, "http:") {
 		wsURL = "ws:" + wsURL[5:]
-	} else if len(wsURL) > 5 && wsURL[:6] == "https:" {
+	} else if strings.HasPrefix(wsURL, "https:") {
 		wsURL = "wss:" + wsURL[6:]
 	}
 
@@ -149,13 +151,19 @@ func (c *WSClient) SubscribeEvents(eventType string, handler func(json.RawMessag
 		return err
 	}
 
-	// Read subscription confirmation
+	// Read and validate subscription confirmation.
 	var ack WSMessage
 	if err := c.conn.ReadJSON(&ack); err != nil {
 		c.mu.Unlock()
 		return err
 	}
 	c.mu.Unlock()
+	if !ack.Success {
+		if ack.Error != nil {
+			return fmt.Errorf("subscribe failed: %s: %s", ack.Error.Code, ack.Error.Message)
+		}
+		return fmt.Errorf("subscribe_events failed")
+	}
 
 	// Stream events
 	for {

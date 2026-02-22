@@ -74,12 +74,16 @@ func (c *Config) Validate() error {
 }
 
 // SaveToKeychain saves credentials to OS keychain, falling back to config file.
+// Both server and token are written atomically: if either write fails the
+// function falls back to file storage so credentials are never left half-saved.
 func SaveToKeychain(server, token string) error {
-	if err := keyring.Set(keychainService, keychainServer, server); err != nil {
-		// Keychain unavailable (headless/container) — fall back to file
+	serverErr := keyring.Set(keychainService, keychainServer, server)
+	tokenErr := keyring.Set(keychainService, keychainToken, token)
+	if serverErr != nil || tokenErr != nil {
+		// Keychain unavailable or partial failure — fall back to file
 		return SaveToFile(server, token, DefaultConfigPath())
 	}
-	return keyring.Set(keychainService, keychainToken, token)
+	return nil
 }
 
 // DeleteFromKeychain removes stored credentials. Safe to call when already logged out.
