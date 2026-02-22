@@ -48,8 +48,8 @@ func TestAutomationApplyDryRun(t *testing.T) {
 	err := rootCmd.Execute()
 	require.NoError(t, err)
 	out := buf.String()
-	assert.Contains(t, out, "-")
-	assert.Contains(t, out, "+")
+	assert.Contains(t, out, "-alias: Old name")
+	assert.Contains(t, out, "+alias: New name")
 }
 
 func TestAutomationApplyDryRunNew(t *testing.T) {

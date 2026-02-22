@@ -171,6 +171,16 @@ ha-client automation enable  morning_routine
 ha-client automation disable morning_routine
 ```
 
+```bash
+ha-client automation export morning_routine          # Export automation config as YAML
+ha-client automation export morning_routine -o json  # Export as JSON
+
+ha-client automation apply -f automation.yaml            # Apply (create or update) automation
+ha-client automation apply -f automation.yaml --dry-run  # Preview changes without applying
+```
+
+`export` works with UI-created automations that have a `unique_id` in storage. The exported YAML can be edited and re-applied with `apply`.
+
 ---
 
 ## Output formats
