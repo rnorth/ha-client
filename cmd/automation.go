@@ -91,6 +91,39 @@ var automationDescribeCmd = &cobra.Command{
 	},
 }
 
+var automationExportCmd = &cobra.Command{
+	Use:   "export <entity_id>",
+	Short: "Export automation config as YAML",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		wsc, err := newWSClient()
+		if err != nil {
+			return err
+		}
+		defer wsc.Close()
+
+		entityID := automationID(args[0])
+		entry, err := wsc.GetEntity(entityID)
+		if err != nil {
+			return fmt.Errorf("automation %q not found in entity registry: %w", entityID, err)
+		}
+		if entry.UniqueID == "" {
+			return fmt.Errorf("automation %q has no unique_id (may be defined in automations.yaml, not UI storage)", entityID)
+		}
+
+		cfg, err := wsc.GetAutomationConfig(entry.UniqueID)
+		if err != nil {
+			return err
+		}
+
+		format := resolveFormat()
+		if format == output.FormatTable {
+			format = output.FormatYAML
+		}
+		return output.Render(cmd.OutOrStdout(), format, cfg, nil)
+	},
+}
+
 // automationID ensures the entity ID has the "automation." prefix.
 func automationID(s string) string {
 	if strings.HasPrefix(s, "automation.") {
@@ -123,6 +156,7 @@ func init() {
 		automationListCmd,
 		automationGetCmd,
 		automationDescribeCmd,
+		automationExportCmd,
 		&cobra.Command{Use: "trigger <entity_id>", Short: "Trigger an automation", Args: cobra.ExactArgs(1), RunE: automationAction("trigger")},
 		&cobra.Command{Use: "enable <entity_id>", Short: "Enable an automation", Args: cobra.ExactArgs(1), RunE: automationAction("turn_on")},
 		&cobra.Command{Use: "disable <entity_id>", Short: "Disable an automation", Args: cobra.ExactArgs(1), RunE: automationAction("turn_off")},
