@@ -171,17 +171,20 @@ var automationApplyCmd = &cobra.Command{
 			return fmt.Errorf("automation 'id' field must be a non-empty string")
 		}
 
-		wsc, err := newWSClient()
+		haConfig, err := resolveConfig()
 		if err != nil {
 			return err
 		}
-		defer wsc.Close()
-
-		if automationApplyDryRun {
-			return runDryRun(cmd, wsc, autoID, cfg)
+		rc, err := client.NewRESTClient(haConfig.Server, haConfig.Token)
+		if err != nil {
+			return err
 		}
 
-		if err := wsc.SaveAutomationConfig(cfg); err != nil {
+		if automationApplyDryRun {
+			return runDryRun(cmd, rc, autoID, cfg)
+		}
+
+		if err := rc.SaveAutomationConfig(autoID, cfg); err != nil {
 			return fmt.Errorf("apply failed: %w", err)
 		}
 		fmt.Fprintf(os.Stderr, "automation %q applied\n", autoID)

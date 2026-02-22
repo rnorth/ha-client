@@ -150,7 +150,7 @@ func TestGetEntityUniqueID(t *testing.T) {
 	assert.Equal(t, "abc-123", result.UniqueID)
 }
 
-func TestGetAutomationConfig(t *testing.T) {
+func TestWSClientGetAutomationConfig(t *testing.T) {
 	cfg := map[string]interface{}{
 		"id":    "abc-123",
 		"alias": "Morning routine",
@@ -171,17 +171,3 @@ func TestGetAutomationConfig(t *testing.T) {
 	assert.Equal(t, "abc-123", result["id"])
 }
 
-func TestSaveAutomationConfig(t *testing.T) {
-	// HA returns the saved config on success.
-	saved := map[string]interface{}{"id": "abc-123", "alias": "Morning routine"}
-	srv := mockWSServer(t, "test-token", "config/automation/config/save", saved)
-	defer srv.Close()
-
-	wsc, err := client.NewWSClient(wsURL(srv), "test-token")
-	require.NoError(t, err)
-	defer wsc.Close()
-
-	cfg := map[string]interface{}{"id": "abc-123", "alias": "Morning routine"}
-	err = wsc.SaveAutomationConfig(cfg)
-	require.NoError(t, err)
-}

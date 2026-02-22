@@ -95,3 +95,29 @@ func TestCallAction(t *testing.T) {
 	err := c.CallAction("light", "turn_on", map[string]interface{}{"entity_id": "light.desk"})
 	require.NoError(t, err)
 }
+
+func TestGetAutomationConfig(t *testing.T) {
+	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/api/config/automation/config/abc-123", r.URL.Path)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"id": "abc-123", "alias": "Morning routine"})
+	})
+
+	cfg, err := c.GetAutomationConfig("abc-123")
+	require.NoError(t, err)
+	assert.Equal(t, "Morning routine", cfg["alias"])
+}
+
+func TestSaveAutomationConfig(t *testing.T) {
+	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/api/config/automation/config/abc-123", r.URL.Path)
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		assert.Equal(t, "Morning routine", body["alias"])
+		w.WriteHeader(http.StatusOK)
+	})
+
+	err := c.SaveAutomationConfig("abc-123", map[string]interface{}{"id": "abc-123", "alias": "Morning routine"})
+	require.NoError(t, err)
+}

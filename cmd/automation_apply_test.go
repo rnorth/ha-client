@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,11 +13,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// newMockRESTServer returns an httptest.Server that handles automation config REST endpoints.
+// handlers maps URL path → handler func; unmatched paths return 404.
+func newMockRESTServer(t *testing.T, handlers map[string]http.HandlerFunc) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if h, ok := handlers[r.URL.Path]; ok {
+			h(w, r)
+		} else {
+			http.NotFound(w, r)
+		}
+	}))
+}
+
 func TestAutomationApply(t *testing.T) {
-	srv := newMockWSServer(t, []interface{}{map[string]interface{}{}})
+	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
+		"/api/config/automation/config/abc-123": func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			w.WriteHeader(http.StatusOK)
+		},
+	})
 	defer srv.Close()
 
-	t.Setenv("HASS_SERVER", wsTestURL(srv))
+	t.Setenv("HASS_SERVER", srv.URL)
 	t.Setenv("HASS_TOKEN", "test-token")
 
 	yamlContent := "id: abc-123\nalias: Morning routine\n"
@@ -31,11 +50,15 @@ func TestAutomationApply(t *testing.T) {
 }
 
 func TestAutomationApplyDryRun(t *testing.T) {
-	current := map[string]interface{}{"id": "abc-123", "alias": "Old name"}
-	srv := newMockWSServer(t, []interface{}{current})
+	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
+		"/api/config/automation/config/abc-123": func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodGet, r.Method)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"id": "abc-123", "alias": "Old name"})
+		},
+	})
 	defer srv.Close()
 
-	t.Setenv("HASS_SERVER", wsTestURL(srv))
+	t.Setenv("HASS_SERVER", srv.URL)
 	t.Setenv("HASS_TOKEN", "test-token")
 
 	yamlContent := "id: abc-123\nalias: New name\n"
@@ -53,29 +76,15 @@ func TestAutomationApplyDryRun(t *testing.T) {
 }
 
 func TestAutomationApplyDryRunNew(t *testing.T) {
-	// Automation doesn't exist yet — GetAutomationConfig returns error
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		conn, err := wsUpgrader.Upgrade(w, r, nil)
-		if err != nil {
-			return
-		}
-		defer conn.Close()
-		_ = conn.WriteJSON(map[string]string{"type": "auth_required", "ha_version": "2024.1"})
-		var auth map[string]string
-		_ = conn.ReadJSON(&auth)
-		_ = conn.WriteJSON(map[string]string{"type": "auth_ok"})
-
-		type wsMsg struct{ ID int `json:"id"` }
-		var cmd wsMsg
-		_ = conn.ReadJSON(&cmd)
-		_ = conn.WriteJSON(map[string]interface{}{
-			"id": cmd.ID, "type": "result", "success": false,
-			"error": map[string]string{"code": "not_found", "message": "Automation not found"},
-		})
-	}))
+	// Automation doesn't exist yet — GET returns 404
+	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
+		"/api/config/automation/config/new-id-999": func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		},
+	})
 	defer srv.Close()
 
-	t.Setenv("HASS_SERVER", wsTestURL(srv))
+	t.Setenv("HASS_SERVER", srv.URL)
 	t.Setenv("HASS_TOKEN", "test-token")
 
 	yamlContent := "id: new-id-999\nalias: Brand new automation\n"
@@ -88,7 +97,6 @@ func TestAutomationApplyDryRunNew(t *testing.T) {
 	err := rootCmd.Execute()
 	require.NoError(t, err)
 	out := buf.String()
-	// All lines should be additions (new automation)
 	assert.Contains(t, out, "+alias:")
 	assert.NotContains(t, out, "-alias:")
 }
