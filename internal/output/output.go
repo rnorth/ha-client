@@ -8,8 +8,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/olekukonko/tablewriter"
-	"github.com/olekukonko/tablewriter/tw"
 	"golang.org/x/term"
 	"gopkg.in/yaml.v3"
 )
@@ -59,13 +57,14 @@ func Render(w io.Writer, format Format, data interface{}, columns []string) erro
 	}
 }
 
+// renderTable prints a kubectl-style columnar table: left-aligned, space-separated,
+// no borders, no cell wrapping. Each row is always exactly one line.
 func renderTable(w io.Writer, data interface{}, columns []string) error {
 	v := reflect.ValueOf(data)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
 
-	// Handle slice of structs
 	if v.Kind() == reflect.Slice {
 		if v.Len() == 0 {
 			fmt.Fprintln(w, "(none)")
@@ -77,48 +76,82 @@ func renderTable(w io.Writer, data interface{}, columns []string) error {
 		}
 		headers, fields := resolveColumns(elem.Type(), columns)
 
-		table := tablewriter.NewTable(w,
-			tablewriter.WithBorders(tw.Border{Left: tw.Off, Right: tw.Off, Top: tw.Off, Bottom: tw.Off}),
-			tablewriter.WithHeaderAlignment(tw.AlignLeft),
-		)
-		table.Header(toAnySlice(headers)...)
+		// Collect all rows as strings so we can compute column widths.
+		rows := make([][]string, v.Len())
 		for i := 0; i < v.Len(); i++ {
 			row := v.Index(i)
 			if row.Kind() == reflect.Ptr {
 				row = row.Elem()
 			}
-			table.Append(toAnySlice(extractRow(row, fields))...)
+			rows[i] = extractRow(row, fields)
 		}
-		return table.Render()
+
+		printColumns(w, headers, rows)
+		return nil
 	}
 
-	// Single struct
 	if v.Kind() == reflect.Struct {
-		table := tablewriter.NewTable(w,
-			tablewriter.WithBorders(tw.Border{Left: tw.Off, Right: tw.Off, Top: tw.Off, Bottom: tw.Off}),
-		)
 		t := v.Type()
+		var rows [][]string
 		for i := 0; i < v.NumField(); i++ {
 			f := t.Field(i)
 			if !f.IsExported() {
 				continue
 			}
-			table.Append(f.Name, fmt.Sprintf("%v", v.Field(i).Interface()))
+			rows = append(rows, []string{f.Name, fmt.Sprintf("%v", v.Field(i).Interface())})
 		}
-		return table.Render()
+		printColumns(w, nil, rows)
+		return nil
 	}
 
-	// Fallback
 	fmt.Fprintln(w, data)
 	return nil
 }
 
-func toAnySlice(ss []string) []interface{} {
-	out := make([]interface{}, len(ss))
-	for i, s := range ss {
-		out[i] = s
+// printColumns writes a kubectl-style table. headers may be nil (for key/value structs).
+// Column widths are computed from all data so no cell is ever truncated or wrapped.
+func printColumns(w io.Writer, headers []string, rows [][]string) {
+	if len(rows) == 0 {
+		return
 	}
-	return out
+	cols := len(rows[0])
+
+	// Compute max width per column.
+	widths := make([]int, cols)
+	if headers != nil {
+		for i, h := range headers {
+			widths[i] = len(h)
+		}
+	}
+	for _, row := range rows {
+		for i, cell := range row {
+			if len(cell) > widths[i] {
+				widths[i] = len(cell)
+			}
+		}
+	}
+
+	printRow := func(cells []string) {
+		for i, cell := range cells {
+			if i > 0 {
+				fmt.Fprint(w, "  ")
+			}
+			// Last column: no trailing padding needed.
+			if i == len(cells)-1 {
+				fmt.Fprint(w, cell)
+			} else {
+				fmt.Fprintf(w, "%-*s", widths[i], cell)
+			}
+		}
+		fmt.Fprintln(w)
+	}
+
+	if headers != nil {
+		printRow(headers)
+	}
+	for _, row := range rows {
+		printRow(row)
+	}
 }
 
 func resolveColumns(t reflect.Type, override []string) (headers []string, fields []string) {
