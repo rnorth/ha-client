@@ -137,6 +137,15 @@ func (c *WSClient) GetEntity(entityID string) (*EntityEntry, error) {
 	return &entity, json.Unmarshal(resp.Result, &entity)
 }
 
+func (c *WSClient) GetAutomationConfig(automationID string) (map[string]interface{}, error) {
+	resp, err := c.send("config/automation/config/get", map[string]interface{}{"automation_id": automationID})
+	if err != nil {
+		return nil, err
+	}
+	var cfg map[string]interface{}
+	return cfg, json.Unmarshal(resp.Result, &cfg)
+}
+
 // SubscribeEvents subscribes to events and calls handler for each event received.
 // Blocks until handler returns false or an error occurs.
 func (c *WSClient) SubscribeEvents(eventType string, handler func(json.RawMessage) bool) error {

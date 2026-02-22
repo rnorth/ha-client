@@ -149,3 +149,24 @@ func TestGetEntityUniqueID(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "abc-123", result.UniqueID)
 }
+
+func TestGetAutomationConfig(t *testing.T) {
+	cfg := map[string]interface{}{
+		"id":    "abc-123",
+		"alias": "Morning routine",
+		"trigger": []interface{}{
+			map[string]interface{}{"platform": "time", "at": "07:00:00"},
+		},
+	}
+	srv := mockWSServer(t, "test-token", "config/automation/config/get", cfg)
+	defer srv.Close()
+
+	wsc, err := client.NewWSClient(wsURL(srv), "test-token")
+	require.NoError(t, err)
+	defer wsc.Close()
+
+	result, err := wsc.GetAutomationConfig("abc-123")
+	require.NoError(t, err)
+	assert.Equal(t, "Morning routine", result["alias"])
+	assert.Equal(t, "abc-123", result["id"])
+}
