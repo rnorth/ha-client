@@ -65,10 +65,11 @@ func (c *WSClient) send(msgType string, extra map[string]interface{}) (*WSMessag
 	defer c.mu.Unlock()
 
 	id := int(c.counter.Add(1))
-	msg := map[string]interface{}{"id": id, "type": msgType}
+	msg := map[string]interface{}{"type": msgType}
 	for k, v := range extra {
 		msg[k] = v
 	}
+	msg["id"] = id // set AFTER merge so it cannot be overwritten by config fields
 
 	if err := c.conn.WriteJSON(msg); err != nil {
 		return nil, fmt.Errorf("send %s: %w", msgType, err)
