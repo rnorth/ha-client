@@ -26,7 +26,7 @@ Inspired by [home-assistant-cli](https://github.com/home-assistant-ecosystem/hom
 |---|---|---|
 | `state` | `list`, `get`, `describe`, `set` | Entity states |
 | `action` | `list`, `call` | HA actions (formerly "services") |
-| `event` | `watch` | Real-time SSE event stream |
+| `event` | `watch` | Real-time event stream (WebSocket) |
 | `area` | `list`, `get`, `create`, `delete` | Area registry |
 | `device` | `list`, `get`, `describe` | Device registry |
 | `automation` | `list`, `get`, `describe`, `trigger`, `enable`, `disable` | Automations |
@@ -48,8 +48,8 @@ Resolution order (highest priority first):
 3. OS keychain (macOS Keychain, Linux libsecret, Windows Credential Manager)
 4. Config file: `~/.config/ha-client/config.yaml`
 
-`ha-client login` — interactive prompt storing credentials to OS keychain
-`ha-client logout` — removes credentials from OS keychain
+`ha-client login` — interactive prompt; stores to OS keychain when available, falls back to config file in headless/container environments where no keychain is present
+`ha-client logout` — removes credentials from keychain or config file
 
 ## Output Behaviour
 
@@ -77,7 +77,8 @@ ha-cli/
 │   └── entity.go      # ha-client entity {list,get,describe}
 ├── internal/
 │   ├── client/
-│   │   └── client.go  # HA REST API client (thin HTTP wrapper)
+│   │   ├── rest.go    # HA REST API client (states, actions, info)
+│   │   └── ws.go      # HA WebSocket API client (events, registry, automations)
 │   ├── config/
 │   │   └── config.go  # Credential resolution logic
 │   └── output/
@@ -88,19 +89,32 @@ ha-cli/
 ## Key Dependencies
 
 - [github.com/spf13/cobra](https://github.com/spf13/cobra) — CLI framework
-- [github.com/zalando/go-keyring](https://github.com/zalando/go-keyring) — OS keychain abstraction
+- [github.com/zalando/go-keyring](https://github.com/zalando/go-keyring) — OS keychain abstraction (with config-file fallback when keychain unavailable)
+- [github.com/gorilla/websocket](https://github.com/gorilla/websocket) — WebSocket client for HA WS API
 - [gopkg.in/yaml.v3](https://gopkg.in/yaml.v3) — YAML output and config file parsing
 - [github.com/olekukonko/tablewriter](https://github.com/olekukonko/tablewriter) — table rendering
 
 ## HA API Endpoints Used
 
-- `GET /api/` — info
-- `GET /api/states` — list states
-- `GET /api/states/<entity_id>` — get state
-- `POST /api/states/<entity_id>` — set state
-- `GET /api/services` — list actions
-- `POST /api/services/<domain>/<service>` — call action
-- `GET /api/events` — list event types
-- `GET /api/events/<event_type>` (SSE) — watch events
-- WebSocket API or REST for automation control
-- `GET /api/config` — server config / info
+### REST API (`/api/`)
+- `GET /api/` — info / health check
+- `GET /api/config` — server config (location, timezone, version)
+- `GET /api/states` — list entity states
+- `GET /api/states/<entity_id>` — get one entity state
+- `POST /api/states/<entity_id>` — set entity state
+- `GET /api/services` — list available actions
+- `POST /api/services/<domain>/<service>` — call an action
+
+### WebSocket API (`/api/websocket`)
+
+All registry and real-time operations go through the HA WebSocket API using authenticated message commands:
+
+- `subscribe_events` — stream events (for `event watch`)
+- `config/area_registry/list` — list areas
+- `config/area_registry/create` — create area
+- `config/area_registry/delete` — delete area
+- `config/device_registry/list` — list/get devices
+- `config/entity_registry/list` — list/get entities
+- `config/entity_registry/get` — describe entity
+- `automation/config` — list/get automations
+- `call_service` with `automation.trigger` / `automation.turn_on` / `automation.turn_off` — trigger/enable/disable automations
