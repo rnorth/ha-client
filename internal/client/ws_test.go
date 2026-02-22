@@ -1,0 +1,102 @@
+package client_test
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/gorilla/websocket"
+	"github.com/rnorth/ha-cli/internal/client"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+var upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
+
+// mockWSServer sets up a test WebSocket server that handles HA auth + one command response.
+func mockWSServer(t *testing.T, token string, cmdType string, response interface{}) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+
+		// Auth required
+		conn.WriteJSON(map[string]string{"type": "auth_required", "ha_version": "2024.1"})
+
+		// Read auth message
+		var authMsg map[string]string
+		conn.ReadJSON(&authMsg)
+		if authMsg["access_token"] != token {
+			conn.WriteJSON(map[string]string{"type": "auth_invalid"})
+			return
+		}
+		conn.WriteJSON(map[string]string{"type": "auth_ok"})
+
+		// Read command
+		var cmd client.WSMessage
+		conn.ReadJSON(&cmd)
+		// Respond with result
+		resultData, _ := json.Marshal(response)
+		conn.WriteJSON(map[string]interface{}{
+			"id":      cmd.ID,
+			"type":    "result",
+			"success": true,
+			"result":  json.RawMessage(resultData),
+		})
+	}))
+	return srv
+}
+
+func wsURL(srv *httptest.Server) string {
+	return "ws" + strings.TrimPrefix(srv.URL, "http")
+}
+
+func TestListAreas(t *testing.T) {
+	areas := []client.Area{{AreaID: "living_room", Name: "Living Room"}}
+	srv := mockWSServer(t, "test-token", "config/area_registry/list", areas)
+	defer srv.Close()
+
+	wsc, err := client.NewWSClient(wsURL(srv), "test-token")
+	require.NoError(t, err)
+	defer wsc.Close()
+
+	result, err := wsc.ListAreas()
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, "Living Room", result[0].Name)
+}
+
+func TestListDevices(t *testing.T) {
+	devices := []client.Device{{ID: "abc123", Name: "Desk Lamp"}}
+	srv := mockWSServer(t, "test-token", "config/device_registry/list", devices)
+	defer srv.Close()
+
+	wsc, err := client.NewWSClient(wsURL(srv), "test-token")
+	require.NoError(t, err)
+	defer wsc.Close()
+
+	result, err := wsc.ListDevices()
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, "Desk Lamp", result[0].Name)
+}
+
+func TestListEntities(t *testing.T) {
+	entities := []client.EntityEntry{{EntityID: "light.desk", Platform: "hue"}}
+	srv := mockWSServer(t, "test-token", "config/entity_registry/list", entities)
+	defer srv.Close()
+
+	wsc, err := client.NewWSClient(wsURL(srv), "test-token")
+	require.NoError(t, err)
+	defer wsc.Close()
+
+	result, err := wsc.ListEntities()
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, "light.desk", result[0].EntityID)
+}
