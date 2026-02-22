@@ -156,7 +156,23 @@ func printColumns(w io.Writer, headers []string, rows [][]string) {
 
 func resolveColumns(t reflect.Type, override []string) (headers []string, fields []string) {
 	if len(override) > 0 {
-		return override, override
+		// Overrides are Go field names. Look up the JSON tag for each so headers
+		// use HA-familiar names (e.g. "entity_id" → "ENTITY_ID", not "EntityID").
+		for _, name := range override {
+			header := name
+			for i := 0; i < t.NumField(); i++ {
+				f := t.Field(i)
+				if f.Name == name {
+					if tag := f.Tag.Get("json"); tag != "" && tag != "-" {
+						header = strings.Split(tag, ",")[0]
+					}
+					break
+				}
+			}
+			headers = append(headers, strings.ToUpper(header))
+			fields = append(fields, name)
+		}
+		return
 	}
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
