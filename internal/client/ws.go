@@ -146,6 +146,11 @@ func (c *WSClient) GetAutomationConfig(automationID string) (map[string]interfac
 	return cfg, json.Unmarshal(resp.Result, &cfg)
 }
 
+func (c *WSClient) SaveAutomationConfig(cfg map[string]interface{}) error {
+	_, err := c.send("config/automation/config/save", cfg)
+	return err
+}
+
 // SubscribeEvents subscribes to events and calls handler for each event received.
 // Blocks until handler returns false or an error occurs.
 func (c *WSClient) SubscribeEvents(eventType string, handler func(json.RawMessage) bool) error {
