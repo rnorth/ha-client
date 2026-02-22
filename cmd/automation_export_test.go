@@ -54,11 +54,6 @@ func wsTestURL(srv *httptest.Server) string {
 }
 
 func TestAutomationExport(t *testing.T) {
-	entity := map[string]interface{}{
-		"entity_id": "automation.morning",
-		"unique_id": "abc-123",
-		"platform":  "automation",
-	}
 	cfg := map[string]interface{}{
 		"id":    "abc-123",
 		"alias": "Morning routine",
@@ -66,7 +61,7 @@ func TestAutomationExport(t *testing.T) {
 			map[string]interface{}{"platform": "time", "at": "07:00:00"},
 		},
 	}
-	srv := newMockWSServer(t, []interface{}{entity, cfg})
+	srv := newMockWSServer(t, []interface{}{cfg})
 	defer srv.Close()
 
 	t.Setenv("HASS_SERVER", wsTestURL(srv))

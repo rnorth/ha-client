@@ -158,14 +158,14 @@ func TestGetAutomationConfig(t *testing.T) {
 			map[string]interface{}{"platform": "time", "at": "07:00:00"},
 		},
 	}
-	srv := mockWSServer(t, "test-token", "config/automation/config/get", cfg)
+	srv := mockWSServer(t, "test-token", "automation/config", cfg)
 	defer srv.Close()
 
 	wsc, err := client.NewWSClient(wsURL(srv), "test-token")
 	require.NoError(t, err)
 	defer wsc.Close()
 
-	result, err := wsc.GetAutomationConfig("abc-123")
+	result, err := wsc.GetAutomationConfig("automation.morning")
 	require.NoError(t, err)
 	assert.Equal(t, "Morning routine", result["alias"])
 	assert.Equal(t, "abc-123", result["id"])

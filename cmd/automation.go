@@ -105,15 +105,7 @@ var automationExportCmd = &cobra.Command{
 		defer wsc.Close()
 
 		entityID := automationID(args[0])
-		entry, err := wsc.GetEntity(entityID)
-		if err != nil {
-			return fmt.Errorf("automation %q not found in entity registry: %w", entityID, err)
-		}
-		if entry.UniqueID == "" {
-			return fmt.Errorf("automation %q has no unique_id (may be defined in automations.yaml, not UI storage)", entityID)
-		}
-
-		cfg, err := wsc.GetAutomationConfig(entry.UniqueID)
+		cfg, err := wsc.GetAutomationConfig(entityID)
 		if err != nil {
 			return err
 		}

@@ -138,11 +138,22 @@ func (c *WSClient) GetEntity(entityID string) (*EntityEntry, error) {
 	return &entity, json.Unmarshal(resp.Result, &entity)
 }
 
-func (c *WSClient) GetAutomationConfig(automationID string) (map[string]interface{}, error) {
-	resp, err := c.send("config/automation/config/get", map[string]interface{}{"automation_id": automationID})
+func (c *WSClient) GetAutomationConfig(entityID string) (map[string]interface{}, error) {
+	resp, err := c.send("automation/config", map[string]interface{}{"entity_id": entityID})
 	if err != nil {
 		return nil, err
 	}
+	// HA wraps the automation config in a "config" key: {"config": {...}}
+	var wrapper struct {
+		Config map[string]interface{} `json:"config"`
+	}
+	if err := json.Unmarshal(resp.Result, &wrapper); err != nil {
+		return nil, err
+	}
+	if wrapper.Config != nil {
+		return wrapper.Config, nil
+	}
+	// Fallback: return the raw result if no wrapper
 	var cfg map[string]interface{}
 	return cfg, json.Unmarshal(resp.Result, &cfg)
 }
