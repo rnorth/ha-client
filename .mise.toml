@@ -1,5 +1,6 @@
 [tools]
 go = "1.25"
+goreleaser = "latest"
 
 [tasks.build]
 description = "Build the ha-client binary"
@@ -17,3 +18,7 @@ run = "rm -f ha-client"
 description = "Build and install to /usr/local/bin"
 depends = ["build"]
 run = "cp ha-client /usr/local/bin/ha-client"
+
+[tasks.release-snapshot]
+description = "Build a snapshot release locally (no publish)"
+run = "goreleaser release --snapshot --clean"
