@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rnorth/ha-cli/internal/client"
+	"github.com/rnorth/ha-client/internal/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

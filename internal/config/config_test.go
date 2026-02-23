@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rnorth/ha-cli/internal/config"
+	"github.com/rnorth/ha-client/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/zalando/go-keyring"

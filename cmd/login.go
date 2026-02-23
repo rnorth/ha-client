@@ -7,8 +7,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/rnorth/ha-cli/internal/client"
-	"github.com/rnorth/ha-cli/internal/config"
+	"github.com/rnorth/ha-client/internal/client"
+	"github.com/rnorth/ha-client/internal/config"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

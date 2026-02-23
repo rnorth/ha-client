@@ -1,4 +1,4 @@
-module github.com/rnorth/ha-cli
+module github.com/rnorth/ha-client
 
 go 1.25.7
 

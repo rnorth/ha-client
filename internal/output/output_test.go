@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rnorth/ha-cli/internal/client"
-	"github.com/rnorth/ha-cli/internal/output"
+	"github.com/rnorth/ha-client/internal/client"
+	"github.com/rnorth/ha-client/internal/output"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"

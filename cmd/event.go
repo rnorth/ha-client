@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/rnorth/ha-cli/internal/client"
+	"github.com/rnorth/ha-client/internal/client"
 	"github.com/spf13/cobra"
 )
 

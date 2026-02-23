@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rnorth/ha-cli/internal/output"
+	"github.com/rnorth/ha-client/internal/output"
 	"github.com/spf13/cobra"
 )
 

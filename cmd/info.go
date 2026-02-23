@@ -3,8 +3,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/rnorth/ha-cli/internal/client"
-	"github.com/rnorth/ha-cli/internal/output"
+	"github.com/rnorth/ha-client/internal/client"
+	"github.com/rnorth/ha-client/internal/output"
 	"github.com/spf13/cobra"
 )
 
