@@ -56,41 +56,6 @@ func wsURL(srv *httptest.Server) string {
 	return "ws" + strings.TrimPrefix(srv.URL, "http")
 }
 
-// mockWSServerSeq handles HA auth + multiple sequential command responses in order.
-func mockWSServerSeq(t *testing.T, token string, responses []interface{}) *httptest.Server {
-	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			return
-		}
-		defer conn.Close()
-
-		_ = conn.WriteJSON(map[string]string{"type": "auth_required", "ha_version": "2024.1"})
-		var authMsg map[string]string
-		_ = conn.ReadJSON(&authMsg)
-		if authMsg["access_token"] != token {
-			_ = conn.WriteJSON(map[string]string{"type": "auth_invalid"})
-			return
-		}
-		_ = conn.WriteJSON(map[string]string{"type": "auth_ok"})
-
-		for _, response := range responses {
-			var cmd client.WSMessage
-			if err := conn.ReadJSON(&cmd); err != nil {
-				return
-			}
-			resultData, _ := json.Marshal(response)
-			_ = conn.WriteJSON(map[string]interface{}{
-				"id":      cmd.ID,
-				"type":    "result",
-				"success": true,
-				"result":  json.RawMessage(resultData),
-			})
-		}
-	}))
-	return srv
-}
 
 func TestListAreas(t *testing.T) {
 	areas := []client.Area{{AreaID: "living_room", Name: "Living Room"}}

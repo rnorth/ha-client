@@ -17,7 +17,7 @@ linters:
         - fmt.Fprintf
         # Best-effort cleanup on error paths
         - (*github.com/gorilla/websocket.Conn).Close
-        - (*github.com/rnorth/ha-cli/internal/client.WSClient).Close
+        - (*github.com/rnorth/ha-client/internal/client.WSClient).Close
 
 run:
   timeout: 5m
