@@ -120,3 +120,12 @@ func (c *RESTClient) ListActions() ([]ActionDomain, error) {
 func (c *RESTClient) CallAction(domain, action string, data map[string]interface{}) error {
 	return c.post("/api/services/"+domain+"/"+action, data, nil)
 }
+
+func (c *RESTClient) GetAutomationConfig(automationID string) (map[string]interface{}, error) {
+	var cfg map[string]interface{}
+	return cfg, c.get("/api/config/automation/config/"+automationID, &cfg)
+}
+
+func (c *RESTClient) SaveAutomationConfig(automationID string, cfg map[string]interface{}) error {
+	return c.post("/api/config/automation/config/"+automationID, cfg, nil)
+}

@@ -65,10 +65,11 @@ func (c *WSClient) send(msgType string, extra map[string]interface{}) (*WSMessag
 	defer c.mu.Unlock()
 
 	id := int(c.counter.Add(1))
-	msg := map[string]interface{}{"id": id, "type": msgType}
+	msg := map[string]interface{}{"type": msgType}
 	for k, v := range extra {
 		msg[k] = v
 	}
+	msg["id"] = id // set AFTER merge so it cannot be overwritten by config fields
 
 	if err := c.conn.WriteJSON(msg); err != nil {
 		return nil, fmt.Errorf("send %s: %w", msgType, err)
@@ -135,6 +136,26 @@ func (c *WSClient) GetEntity(entityID string) (*EntityEntry, error) {
 	}
 	var entity EntityEntry
 	return &entity, json.Unmarshal(resp.Result, &entity)
+}
+
+func (c *WSClient) GetAutomationConfig(entityID string) (map[string]interface{}, error) {
+	resp, err := c.send("automation/config", map[string]interface{}{"entity_id": entityID})
+	if err != nil {
+		return nil, err
+	}
+	// HA wraps the automation config in a "config" key: {"config": {...}}
+	var wrapper struct {
+		Config map[string]interface{} `json:"config"`
+	}
+	if err := json.Unmarshal(resp.Result, &wrapper); err != nil {
+		return nil, err
+	}
+	if wrapper.Config != nil {
+		return wrapper.Config, nil
+	}
+	// Fallback: return the raw result if no wrapper
+	var cfg map[string]interface{}
+	return cfg, json.Unmarshal(resp.Result, &cfg)
 }
 
 // SubscribeEvents subscribes to events and calls handler for each event received.

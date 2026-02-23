@@ -54,12 +54,13 @@ type Device struct {
 }
 
 type EntityEntry struct {
-	EntityID string `json:"entity_id" yaml:"entity_id"`
-	Name     string `json:"name,omitempty" yaml:"name,omitempty"`
-	AreaID   string `json:"area_id,omitempty" yaml:"area_id,omitempty"`
-	DeviceID string `json:"device_id,omitempty" yaml:"device_id,omitempty"`
-	Platform string `json:"platform,omitempty" yaml:"platform,omitempty"`
+	EntityID   string  `json:"entity_id" yaml:"entity_id"`
+	Name       string  `json:"name,omitempty" yaml:"name,omitempty"`
+	AreaID     string  `json:"area_id,omitempty" yaml:"area_id,omitempty"`
+	DeviceID   string  `json:"device_id,omitempty" yaml:"device_id,omitempty"`
+	Platform   string  `json:"platform,omitempty" yaml:"platform,omitempty"`
 	DisabledBy *string `json:"disabled_by,omitempty" yaml:"disabled_by,omitempty"`
+	UniqueID   string  `json:"unique_id,omitempty" yaml:"unique_id,omitempty"`
 }
 
 type WSMessage struct {

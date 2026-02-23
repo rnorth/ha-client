@@ -5,9 +5,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pmezard/go-difflib/difflib"
 	"github.com/rnorth/ha-cli/internal/client"
 	"github.com/rnorth/ha-cli/internal/output"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 var automationCmd = &cobra.Command{Use: "automation", Short: "Manage Home Assistant automations"}
@@ -91,6 +93,31 @@ var automationDescribeCmd = &cobra.Command{
 	},
 }
 
+var automationExportCmd = &cobra.Command{
+	Use:   "export <entity_id>",
+	Short: "Export automation config as YAML",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		wsc, err := newWSClient()
+		if err != nil {
+			return err
+		}
+		defer wsc.Close()
+
+		entityID := automationID(args[0])
+		cfg, err := wsc.GetAutomationConfig(entityID)
+		if err != nil {
+			return err
+		}
+
+		format := resolveFormat()
+		if format == output.FormatTable {
+			format = output.FormatYAML
+		}
+		return output.Render(cmd.OutOrStdout(), format, cfg, nil)
+	},
+}
+
 // automationID ensures the entity ID has the "automation." prefix.
 func automationID(s string) string {
 	if strings.HasPrefix(s, "automation.") {
@@ -118,14 +145,113 @@ func automationAction(action string) func(cmd *cobra.Command, args []string) err
 	}
 }
 
+var automationApplyFile string
+var automationApplyDryRun bool
+
+var automationApplyCmd = &cobra.Command{
+	Use:   "apply",
+	Short: "Apply (create or update) an automation from a YAML file",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		data, err := os.ReadFile(automationApplyFile)
+		if err != nil {
+			return fmt.Errorf("reading file: %w", err)
+		}
+
+		var cfg map[string]interface{}
+		if err := yaml.Unmarshal(data, &cfg); err != nil {
+			return fmt.Errorf("parsing YAML: %w", err)
+		}
+
+		idVal, ok := cfg["id"]
+		if !ok || idVal == nil || idVal == "" {
+			return fmt.Errorf("automation YAML must contain an 'id' field")
+		}
+		autoID, ok := idVal.(string)
+		if !ok || autoID == "" {
+			return fmt.Errorf("automation 'id' field must be a non-empty string")
+		}
+
+		haConfig, err := resolveConfig()
+		if err != nil {
+			return err
+		}
+		rc, err := client.NewRESTClient(haConfig.Server, haConfig.Token)
+		if err != nil {
+			return err
+		}
+
+		if automationApplyDryRun {
+			return runDryRun(cmd, rc, autoID, cfg)
+		}
+
+		if err := rc.SaveAutomationConfig(autoID, cfg); err != nil {
+			return fmt.Errorf("apply failed: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "automation %q applied\n", autoID)
+		return nil
+	},
+}
+
+func runDryRun(cmd *cobra.Command, wsc interface {
+	GetAutomationConfig(string) (map[string]interface{}, error)
+}, autoID string, newCfg map[string]interface{}) error {
+	newYAML, err := yaml.Marshal(newCfg)
+	if err != nil {
+		return err
+	}
+
+	current, err := wsc.GetAutomationConfig(autoID)
+	var oldYAML []byte
+	if err != nil {
+		// Automation doesn't exist yet — treat as all-new
+		oldYAML = []byte{}
+	} else {
+		oldYAML, err = yaml.Marshal(current)
+		if err != nil {
+			return err
+		}
+	}
+
+	ud := difflib.UnifiedDiff{
+		A:        difflib.SplitLines(string(oldYAML)),
+		B:        difflib.SplitLines(string(newYAML)),
+		FromFile: "current",
+		ToFile:   "new",
+		Context:  3,
+	}
+	text, err := difflib.GetUnifiedDiffString(ud)
+	if err != nil {
+		return err
+	}
+	if text == "" {
+		fmt.Fprintln(cmd.OutOrStdout(), "(no changes)")
+		return nil
+	}
+	// Show only +/- and @@ lines
+	var sb strings.Builder
+	for _, line := range strings.Split(text, "\n") {
+		if strings.HasPrefix(line, "+") || strings.HasPrefix(line, "-") || strings.HasPrefix(line, "@") {
+			sb.WriteString(line)
+			sb.WriteString("\n")
+		}
+	}
+	fmt.Fprint(cmd.OutOrStdout(), sb.String())
+	return nil
+}
+
 func init() {
 	automationCmd.AddCommand(
 		automationListCmd,
 		automationGetCmd,
 		automationDescribeCmd,
+		automationExportCmd,
+		automationApplyCmd,
 		&cobra.Command{Use: "trigger <entity_id>", Short: "Trigger an automation", Args: cobra.ExactArgs(1), RunE: automationAction("trigger")},
 		&cobra.Command{Use: "enable <entity_id>", Short: "Enable an automation", Args: cobra.ExactArgs(1), RunE: automationAction("turn_on")},
 		&cobra.Command{Use: "disable <entity_id>", Short: "Disable an automation", Args: cobra.ExactArgs(1), RunE: automationAction("turn_off")},
 	)
+	automationApplyCmd.Flags().StringVarP(&automationApplyFile, "filename", "f", "", "path to automation YAML file (required)")
+	_ = automationApplyCmd.MarkFlagRequired("filename")
+	automationApplyCmd.Flags().BoolVar(&automationApplyDryRun, "dry-run", false, "print diff without applying")
 	rootCmd.AddCommand(automationCmd)
 }
