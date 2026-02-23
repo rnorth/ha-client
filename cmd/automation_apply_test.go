@@ -101,6 +101,30 @@ func TestAutomationApplyDryRunNew(t *testing.T) {
 	assert.NotContains(t, out, "-alias:")
 }
 
+func TestAutomationApplyDryRunErrorsOnFetchFailure(t *testing.T) {
+	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
+		"/api/config/automation/config/abc-123": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("boom"))
+		},
+	})
+	defer srv.Close()
+
+	t.Setenv("HASS_SERVER", srv.URL)
+	t.Setenv("HASS_TOKEN", "test-token")
+
+	yamlContent := "id: abc-123\nalias: New name\n"
+	f := filepath.Join(t.TempDir(), "automation.yaml")
+	require.NoError(t, os.WriteFile(f, []byte(yamlContent), 0o644))
+
+	rootCmd.SilenceErrors = true
+	rootCmd.SilenceUsage = true
+	rootCmd.SetArgs([]string{"automation", "apply", "-f", f, "--dry-run"})
+	err := rootCmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "loading current automation config")
+}
+
 func TestAutomationApplyMissingID(t *testing.T) {
 	yamlContent := "alias: No ID here\n"
 	f := filepath.Join(t.TempDir(), "automation.yaml")

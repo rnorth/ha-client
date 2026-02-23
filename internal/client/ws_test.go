@@ -56,7 +56,6 @@ func wsURL(srv *httptest.Server) string {
 	return "ws" + strings.TrimPrefix(srv.URL, "http")
 }
 
-
 func TestListAreas(t *testing.T) {
 	areas := []client.Area{{AreaID: "living_room", Name: "Living Room"}}
 	srv := mockWSServer(t, "test-token", "config/area_registry/list", areas)
@@ -135,4 +134,3 @@ func TestWSClientGetAutomationConfig(t *testing.T) {
 	assert.Equal(t, "Morning routine", result["alias"])
 	assert.Equal(t, "abc-123", result["id"])
 }
-

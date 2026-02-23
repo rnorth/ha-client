@@ -203,8 +203,12 @@ func runDryRun(cmd *cobra.Command, wsc interface {
 	current, err := wsc.GetAutomationConfig(autoID)
 	var oldYAML []byte
 	if err != nil {
-		// Automation doesn't exist yet — treat as all-new
-		oldYAML = []byte{}
+		if strings.Contains(err.Error(), "not found") {
+			// Automation doesn't exist yet — treat as all-new
+			oldYAML = []byte{}
+		} else {
+			return fmt.Errorf("loading current automation config: %w", err)
+		}
 	} else {
 		oldYAML, err = yaml.Marshal(current)
 		if err != nil {
