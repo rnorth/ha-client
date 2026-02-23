@@ -38,7 +38,7 @@ checksum:
 release:
   github:
     owner: rnorth
-    name: ha-cli
+    name: ha-client
   draft: false
   prerelease: auto
 

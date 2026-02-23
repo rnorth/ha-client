@@ -20,7 +20,7 @@ Go version: 1.25 (managed by mise).
 
 ## Architecture
 
-The project is a kubectl-style CLI for Home Assistant. The binary is `ha-client`; the module is `github.com/rnorth/ha-cli`.
+The project is a kubectl-style CLI for Home Assistant. The binary is `ha-client`; the module is `github.com/rnorth/ha-client`.
 
 **Transport layers** (`internal/client/`):
 - `RESTClient` — HTTP client for `/api/*` endpoints (states, actions, server info)
