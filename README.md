@@ -12,6 +12,13 @@ sensor.living_room_temperature           21.4   2026-02-22 09:13:58 +0000 UTC
 
 ## Install
 
+**Homebrew** (macOS and Linux):
+
+```bash
+brew tap rnorth/ha-client
+brew install ha-client
+```
+
 **From source** (requires Go 1.25):
 
 ```bash
