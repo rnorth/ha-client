@@ -54,7 +54,7 @@ func TestActionCall_DataFields(t *testing.T) {
 	var gotBody map[string]interface{}
 	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
 		"/api/services/light/turn_on": func(w http.ResponseWriter, r *http.Request) {
-			_ = json.NewDecoder(r.Body).Decode(&gotBody)
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&gotBody))
 			w.WriteHeader(http.StatusOK)
 		},
 	})
@@ -78,7 +78,7 @@ func TestActionCall_DataJSON(t *testing.T) {
 	var gotBody map[string]interface{}
 	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
 		"/api/services/light/turn_on": func(w http.ResponseWriter, r *http.Request) {
-			_ = json.NewDecoder(r.Body).Decode(&gotBody)
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&gotBody))
 			w.WriteHeader(http.StatusOK)
 		},
 	})
@@ -101,7 +101,7 @@ func TestActionCall_MergeOrder(t *testing.T) {
 	var gotBody map[string]interface{}
 	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
 		"/api/services/light/turn_on": func(w http.ResponseWriter, r *http.Request) {
-			_ = json.NewDecoder(r.Body).Decode(&gotBody)
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&gotBody))
 			w.WriteHeader(http.StatusOK)
 		},
 	})
