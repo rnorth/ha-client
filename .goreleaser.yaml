@@ -42,12 +42,13 @@ release:
   draft: false
   prerelease: auto
 
-brews:
+homebrew_casks:
   - name: ha-client
     homepage: "https://github.com/rnorth/ha-client"
     description: "kubectl-style CLI for Home Assistant"
-    license: "MIT"
-    directory: Formula
+    binaries:
+      - ha-client
+    directory: Casks
     repository:
       owner: rnorth
       name: homebrew-ha-client
@@ -56,9 +57,7 @@ brews:
     commit_author:
       name: goreleaserbot
       email: bot@goreleaser.com
-    commit_msg_template: "chore: update formula for {{ .ProjectName }} {{ .Tag }}"
-    install: |
-      bin.install "ha-client"
+    commit_msg_template: "chore: update cask for {{ .ProjectName }} {{ .Tag }}"
 
 changelog:
   disable: true
