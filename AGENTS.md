@@ -37,3 +37,16 @@ Priority: CLI flags > `HASS_SERVER`/`HASS_TOKEN` env vars > OS keychain (`go-key
 Each file registers subcommands on `rootCmd` (cobra). Commands call `resolveConfig()` + `newWSClient()` or create a `RESTClient` directly. The `resolveFormat()` helper detects output format from the `-o` flag and stdout TTY state.
 
 `describe` subcommands always output YAML at a TTY and JSON when piped.
+
+## Testing conventions
+
+- `newMockRESTServer` (REST) and `newMockWSServer` (WebSocket) test helpers are defined in
+  `cmd/automation_apply_test.go` and `cmd/automation_export_test.go` respectively — available
+  to all tests in the `cmd` package.
+- Cobra flag variables are shared across tests. Use `t.Cleanup` to reset them after each test,
+  especially `[]string` (StringArray) flags which append on re-parse rather than reset.
+- `docs/plans/` is gitignored — design docs saved there won't be committed.
+
+## Code review
+
+Use `codex review --base <ref>` to review changes against a base commit.
