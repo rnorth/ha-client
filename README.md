@@ -111,9 +111,11 @@ ha-client action list                 # lists all domain.action pairs
 ```
 
 ```bash
-ha-client action call light.turn_on --data '{"entity_id": "light.desk"}'
-ha-client action call light.turn_off --data '{"entity_id": "light.desk"}'
+ha-client action call light.turn_on --entity_id=light.desk
+ha-client action call light.turn_on --entity_id=light.desk -d transition=5 -d brightness_pct=80
+ha-client action call light.turn_off --entity_id=light.desk
 ha-client action call homeassistant.reload_config_entry
+ha-client action call light.turn_on --data-json '{"entity_id":"light.desk","effect":"rainbow"}'
 ```
 
 Actions are what Home Assistant calls "services". The format is `<domain>.<action>`.
