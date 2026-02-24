@@ -23,10 +23,7 @@ var stateListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := client.NewRESTClient(cfg.Server, cfg.Token)
-		if err != nil {
-			return err
-		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		states, err := c.ListStates()
 		if err != nil {
 			return err
@@ -44,10 +41,7 @@ var stateGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := client.NewRESTClient(cfg.Server, cfg.Token)
-		if err != nil {
-			return err
-		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		state, err := c.GetState(args[0])
 		if err != nil {
 			return err
@@ -65,20 +59,13 @@ var stateDescribeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := client.NewRESTClient(cfg.Server, cfg.Token)
-		if err != nil {
-			return err
-		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		state, err := c.GetState(args[0])
 		if err != nil {
 			return err
 		}
 		// Always render describe as JSON/YAML (attributes map doesn't render well in table)
-		format := resolveFormat()
-		if format == output.FormatTable {
-			format = output.FormatYAML
-		}
-		return output.Render(os.Stdout, format, state, nil)
+		return output.Render(os.Stdout, resolveDescribeFormat(), state, nil)
 	},
 }
 
@@ -91,10 +78,7 @@ var stateSetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := client.NewRESTClient(cfg.Server, cfg.Token)
-		if err != nil {
-			return err
-		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		var attrs map[string]interface{}
 		if attrJSON != "" {
 			if err := json.Unmarshal([]byte(attrJSON), &attrs); err != nil {

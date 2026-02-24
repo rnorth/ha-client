@@ -16,13 +16,13 @@ type RESTClient struct {
 	http    *http.Client
 }
 
-func NewRESTClient(serverURL, token string) (*RESTClient, error) {
+func NewRESTClient(serverURL, token string) *RESTClient {
 	url := strings.TrimRight(serverURL, "/")
 	return &RESTClient{
 		baseURL: url,
 		token:   token,
 		http:    &http.Client{Timeout: 30 * time.Second},
-	}, nil
+	}
 }
 
 func (c *RESTClient) get(path string, out interface{}) error {
@@ -121,6 +121,7 @@ func (c *RESTClient) CallAction(domain, action string, data map[string]interface
 	return c.post("/api/services/"+domain+"/"+action, data, nil)
 }
 
+// GetAutomationConfig fetches the automation config for the given storage ID (the "id" field in the automation YAML, e.g. "abc-123"), not the entity ID.
 func (c *RESTClient) GetAutomationConfig(automationID string) (map[string]interface{}, error) {
 	var cfg map[string]interface{}
 	return cfg, c.get("/api/config/automation/config/"+automationID, &cfg)

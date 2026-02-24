@@ -22,10 +22,7 @@ var automationListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := client.NewRESTClient(cfg.Server, cfg.Token)
-		if err != nil {
-			return err
-		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		states, err := c.ListStates()
 		if err != nil {
 			return err
@@ -56,10 +53,7 @@ var automationGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := client.NewRESTClient(cfg.Server, cfg.Token)
-		if err != nil {
-			return err
-		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		state, err := c.GetState(automationID(args[0]))
 		if err != nil {
 			return err
@@ -77,19 +71,12 @@ var automationDescribeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := client.NewRESTClient(cfg.Server, cfg.Token)
-		if err != nil {
-			return err
-		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		state, err := c.GetState(automationID(args[0]))
 		if err != nil {
 			return err
 		}
-		format := resolveFormat()
-		if format == output.FormatTable {
-			format = output.FormatYAML
-		}
-		return output.Render(os.Stdout, format, state, nil)
+		return output.Render(os.Stdout, resolveDescribeFormat(), state, nil)
 	},
 }
 
@@ -110,11 +97,7 @@ var automationExportCmd = &cobra.Command{
 			return err
 		}
 
-		format := resolveFormat()
-		if format == output.FormatTable {
-			format = output.FormatYAML
-		}
-		return output.Render(cmd.OutOrStdout(), format, cfg, nil)
+		return output.Render(cmd.OutOrStdout(), resolveDescribeFormat(), cfg, nil)
 	},
 }
 
@@ -132,10 +115,7 @@ func automationAction(action string) func(cmd *cobra.Command, args []string) err
 		if err != nil {
 			return err
 		}
-		c, err := client.NewRESTClient(cfg.Server, cfg.Token)
-		if err != nil {
-			return err
-		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		id := automationID(args[0])
 		if err := c.CallAction("automation", action, map[string]interface{}{"entity_id": id}); err != nil {
 			return err
@@ -175,10 +155,7 @@ var automationApplyCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		rc, err := client.NewRESTClient(haConfig.Server, haConfig.Token)
-		if err != nil {
-			return err
-		}
+		rc := client.NewRESTClient(haConfig.Server, haConfig.Token)
 
 		if automationApplyDryRun {
 			return runDryRun(cmd, rc, autoID, cfg)
@@ -192,7 +169,7 @@ var automationApplyCmd = &cobra.Command{
 	},
 }
 
-func runDryRun(cmd *cobra.Command, wsc interface {
+func runDryRun(cmd *cobra.Command, rc interface {
 	GetAutomationConfig(string) (map[string]interface{}, error)
 }, autoID string, newCfg map[string]interface{}) error {
 	newYAML, err := yaml.Marshal(newCfg)
@@ -200,7 +177,7 @@ func runDryRun(cmd *cobra.Command, wsc interface {
 		return err
 	}
 
-	current, err := wsc.GetAutomationConfig(autoID)
+	current, err := rc.GetAutomationConfig(autoID)
 	var oldYAML []byte
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {

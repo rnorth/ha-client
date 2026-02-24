@@ -66,11 +66,7 @@ var deviceDescribeCmd = &cobra.Command{
 		}
 		for _, d := range devices {
 			if d.ID == args[0] || d.Name == args[0] {
-				format := resolveFormat()
-				if format == output.FormatTable {
-					format = output.FormatYAML
-				}
-				return output.Render(os.Stdout, format, d, nil)
+				return output.Render(os.Stdout, resolveDescribeFormat(), d, nil)
 			}
 		}
 		return fmt.Errorf("device %q not found", args[0])

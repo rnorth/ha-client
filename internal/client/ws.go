@@ -138,6 +138,7 @@ func (c *WSClient) GetEntity(entityID string) (*EntityEntry, error) {
 	return &entity, json.Unmarshal(resp.Result, &entity)
 }
 
+// GetAutomationConfig fetches the automation config for the given HA entity ID (e.g. "automation.my_automation"); it resolves the entity ID to the storage ID internally via the entity registry.
 func (c *WSClient) GetAutomationConfig(entityID string) (map[string]interface{}, error) {
 	resp, err := c.send("automation/config", map[string]interface{}{"entity_id": entityID})
 	if err != nil {

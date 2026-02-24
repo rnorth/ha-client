@@ -34,10 +34,7 @@ var loginCmd = &cobra.Command{
 		token := strings.TrimSpace(string(tokenBytes))
 
 		// Verify credentials work
-		c, err := client.NewRESTClient(server, token)
-		if err != nil {
-			return fmt.Errorf("invalid server URL: %w", err)
-		}
+		c := client.NewRESTClient(server, token)
 		if _, err := c.GetInfo(); err != nil {
 			return fmt.Errorf("could not connect to Home Assistant: %w", err)
 		}

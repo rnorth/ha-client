@@ -41,6 +41,14 @@ func resolveFormat() output.Format {
 	return output.DetectFormat(outputFormat, os.Stdout)
 }
 
+func resolveDescribeFormat() output.Format {
+	format := resolveFormat()
+	if format == output.FormatTable {
+		return output.FormatYAML
+	}
+	return format
+}
+
 func newWSClient() (*client.WSClient, error) {
 	cfg, err := resolveConfig()
 	if err != nil {

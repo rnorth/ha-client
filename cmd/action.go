@@ -23,10 +23,7 @@ var actionListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := client.NewRESTClient(cfg.Server, cfg.Token)
-		if err != nil {
-			return err
-		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		domains, err := c.ListActions()
 		if err != nil {
 			return err
@@ -61,10 +58,7 @@ var actionCallCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := client.NewRESTClient(cfg.Server, cfg.Token)
-		if err != nil {
-			return err
-		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 
 		// Parse "domain.action"
 		parts := splitDomainAction(args[0])

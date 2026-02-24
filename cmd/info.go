@@ -16,10 +16,7 @@ var infoCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := client.NewRESTClient(cfg.Server, cfg.Token)
-		if err != nil {
-			return err
-		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		info, err := c.GetInfo()
 		if err != nil {
 			return err

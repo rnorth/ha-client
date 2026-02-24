@@ -58,11 +58,7 @@ var entityDescribeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		format := resolveFormat()
-		if format == output.FormatTable {
-			format = output.FormatYAML
-		}
-		return output.Render(os.Stdout, format, entity, nil)
+		return output.Render(os.Stdout, resolveDescribeFormat(), entity, nil)
 	},
 }
 

@@ -15,9 +15,7 @@ func newTestServer(t *testing.T, handler http.HandlerFunc) (*httptest.Server, *c
 	t.Helper()
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
-	c, err := client.NewRESTClient(srv.URL, "test-token")
-	require.NoError(t, err)
-	return srv, c
+	return srv, client.NewRESTClient(srv.URL, "test-token")
 }
 
 func TestGetInfo(t *testing.T) {
