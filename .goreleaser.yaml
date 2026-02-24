@@ -49,6 +49,14 @@ homebrew_casks:
     binaries:
       - ha-client
     directory: Casks
+    url:
+      verified: github.com/rnorth/ha-client
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/ha-client"]
+          end
     repository:
       owner: rnorth
       name: homebrew-ha-client
