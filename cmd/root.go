@@ -41,6 +41,11 @@ func resolveFormat() output.Format {
 	return output.DetectFormat(outputFormat, os.Stdout)
 }
 
+// resolveDescribeFormat returns the output format for "describe" subcommands.
+// Describe commands expose deeply-nested data (attributes, config blocks) that
+// does not render usefully as a flat table, so we upgrade table → YAML at a TTY.
+// YAML is preferred over JSON for human-facing output because it is less noisy
+// (no quotes, no braces) and easier to scan at a glance.
 func resolveDescribeFormat() output.Format {
 	format := resolveFormat()
 	if format == output.FormatTable {

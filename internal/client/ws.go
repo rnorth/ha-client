@@ -31,7 +31,9 @@ func NewWSClient(serverURL, token string) (*WSClient, error) {
 		return nil, fmt.Errorf("websocket connect failed: %w", err)
 	}
 
-	// Auth flow
+	// HA WebSocket auth is a server-initiated challenge-response: the server sends
+	// "auth_required" first, then the client replies with the token, then the server
+	// confirms with "auth_ok". We must not send anything before receiving the challenge.
 	var authRequired WSMessage
 	if err := conn.ReadJSON(&authRequired); err != nil {
 		conn.Close()
@@ -60,10 +62,16 @@ func (c *WSClient) Close() error {
 	return c.conn.Close()
 }
 
+// send serialises a request-response cycle on the WebSocket connection.
+// The mutex covers the entire send+read pair so that concurrent callers
+// never interleave their writes and reads — each message ID maps 1:1 to the
+// next response, so breaking that pairing would corrupt the message stream.
 func (c *WSClient) send(msgType string, extra map[string]interface{}) (*WSMessage, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// counter is atomic so the increment itself is safe without the lock, but we
+	// still hold mu here so the ID is always assigned before the write goes out.
 	id := int(c.counter.Add(1))
 	msg := map[string]interface{}{"type": msgType}
 	for k, v := range extra {
@@ -173,12 +181,16 @@ func (c *WSClient) SubscribeEvents(eventType string, handler func(json.RawMessag
 		return err
 	}
 
-	// Read and validate subscription confirmation.
+	// Read the subscription confirmation while still holding mu so no other
+	// send() call can write or read between our subscribe command and its ACK.
 	var ack WSMessage
 	if err := c.conn.ReadJSON(&ack); err != nil {
 		c.mu.Unlock()
 		return err
 	}
+	// Release the lock before entering the event loop: the loop only reads from
+	// the connection and never interacts with other callers, so holding mu would
+	// deadlock any concurrent send() call for the lifetime of the subscription.
 	c.mu.Unlock()
 	if !ack.Success {
 		if ack.Error != nil {

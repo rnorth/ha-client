@@ -35,16 +35,25 @@ var eventWatchCmd = &cobra.Command{
 
 		stop := make(chan os.Signal, 1)
 		signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+		// Buffered so the goroutine below can send without blocking if we already
+		// returned via the signal branch.
 		done := make(chan error, 1)
 
+		// Run SubscribeEvents in a goroutine because it blocks indefinitely.
+		// The main goroutine then selects between a user interrupt and a connection
+		// error, allowing a clean shutdown on Ctrl+C.
 		go func() {
 			done <- wsc.SubscribeEvents(eventTypeFilter, func(event json.RawMessage) bool {
+				// Check for stop signal before printing each event so we don't
+				// emit a partial event after the user has asked us to quit.
 				select {
 				case <-stop:
 					return false
 				default:
 				}
 				var pretty map[string]interface{}
+				// Best-effort pretty-print; if the event isn't valid JSON we skip it
+				// silently rather than crashing — HA occasionally sends non-JSON events.
 				if json.Unmarshal(event, &pretty) == nil {
 					enc := json.NewEncoder(os.Stdout)
 					enc.SetIndent("", "  ")

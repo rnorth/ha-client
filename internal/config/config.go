@@ -74,8 +74,10 @@ func (c *Config) Validate() error {
 }
 
 // SaveToKeychain saves credentials to OS keychain, falling back to config file.
-// Both server and token are written atomically: if either write fails the
-// function falls back to file storage so credentials are never left half-saved.
+// "Atomic" here means all-or-nothing at the application level: if either keychain
+// write fails (e.g. no keychain available in CI/headless environments) we fall back
+// to the config file for both values, so we never end up with server in the keychain
+// but token missing (or vice versa).
 func SaveToKeychain(server, token string) error {
 	serverErr := keyring.Set(keychainService, keychainServer, server)
 	tokenErr := keyring.Set(keychainService, keychainToken, token)

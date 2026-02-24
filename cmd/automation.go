@@ -180,6 +180,8 @@ func runDryRun(cmd *cobra.Command, rc interface {
 	current, err := rc.GetAutomationConfig(autoID)
 	var oldYAML []byte
 	if err != nil {
+		// RESTClient returns a plain string error for HTTP 404s; there is no
+		// dedicated error type, so we match on the message text.
 		if strings.Contains(err.Error(), "not found") {
 			// Automation doesn't exist yet — treat as all-new
 			oldYAML = []byte{}
@@ -208,7 +210,9 @@ func runDryRun(cmd *cobra.Command, rc interface {
 		fmt.Fprintln(cmd.OutOrStdout(), "(no changes)")
 		return nil
 	}
-	// Show only +/- and @@ lines
+	// Strip the unchanged context lines (those that start with a space) to keep
+	// the dry-run output compact; the @@ hunk headers already tell the reader
+	// where in the file each change lives.
 	var sb strings.Builder
 	for _, line := range strings.Split(text, "\n") {
 		if strings.HasPrefix(line, "+") || strings.HasPrefix(line, "-") || strings.HasPrefix(line, "@") {

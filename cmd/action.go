@@ -81,6 +81,10 @@ var actionCallCmd = &cobra.Command{
 	},
 }
 
+// splitDomainAction splits "domain.action" at the first dot only, returning
+// [domain, action]. We scan manually rather than using strings.SplitN so it is
+// explicit that only the first dot is a separator — action names themselves can
+// theoretically contain dots (e.g. a script named "run.scene.on").
 func splitDomainAction(s string) []string {
 	for i, c := range s {
 		if c == '.' {

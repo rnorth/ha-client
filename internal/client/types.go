@@ -59,6 +59,8 @@ type EntityEntry struct {
 	AreaID     string  `json:"area_id,omitempty" yaml:"area_id,omitempty"`
 	DeviceID   string  `json:"device_id,omitempty" yaml:"device_id,omitempty"`
 	Platform   string  `json:"platform,omitempty" yaml:"platform,omitempty"`
+	// DisabledBy is nil when the entity is enabled. A non-nil value names the
+	// source that disabled it (e.g. "user", "integration", "config_entry").
 	DisabledBy *string `json:"disabled_by,omitempty" yaml:"disabled_by,omitempty"`
 	UniqueID   string  `json:"unique_id,omitempty" yaml:"unique_id,omitempty"`
 }
