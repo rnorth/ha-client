@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/rnorth/ha-client/internal/client"
 	"github.com/rnorth/ha-client/internal/output"
@@ -81,17 +82,15 @@ var actionCallCmd = &cobra.Command{
 	},
 }
 
-// splitDomainAction splits "domain.action" at the first dot only, returning
-// [domain, action]. We scan manually rather than using strings.SplitN so it is
-// explicit that only the first dot is a separator — action names themselves can
-// theoretically contain dots (e.g. a script named "run.scene.on").
+// splitDomainAction splits "domain.action" at the first dot, returning
+// [domain, action]. SplitN with n=2 means action names that contain dots
+// (e.g. a script named "run.scene.on") are kept intact in the second element.
 func splitDomainAction(s string) []string {
-	for i, c := range s {
-		if c == '.' {
-			return []string{s[:i], s[i+1:]}
-		}
+	parts := strings.SplitN(s, ".", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return nil
 	}
-	return nil
+	return parts
 }
 
 func init() {

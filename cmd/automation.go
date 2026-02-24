@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -180,9 +181,7 @@ func runDryRun(cmd *cobra.Command, rc interface {
 	current, err := rc.GetAutomationConfig(autoID)
 	var oldYAML []byte
 	if err != nil {
-		// RESTClient returns a plain string error for HTTP 404s; there is no
-		// dedicated error type, so we match on the message text.
-		if strings.Contains(err.Error(), "not found") {
+		if errors.Is(err, client.ErrNotFound) {
 			// Automation doesn't exist yet — treat as all-new
 			oldYAML = []byte{}
 		} else {
@@ -200,7 +199,7 @@ func runDryRun(cmd *cobra.Command, rc interface {
 		B:        difflib.SplitLines(string(newYAML)),
 		FromFile: "current",
 		ToFile:   "new",
-		Context:  3,
+		Context:  0, // no surrounding context — hunk headers show line numbers
 	}
 	text, err := difflib.GetUnifiedDiffString(ud)
 	if err != nil {
@@ -210,17 +209,7 @@ func runDryRun(cmd *cobra.Command, rc interface {
 		fmt.Fprintln(cmd.OutOrStdout(), "(no changes)")
 		return nil
 	}
-	// Strip the unchanged context lines (those that start with a space) to keep
-	// the dry-run output compact; the @@ hunk headers already tell the reader
-	// where in the file each change lives.
-	var sb strings.Builder
-	for _, line := range strings.Split(text, "\n") {
-		if strings.HasPrefix(line, "+") || strings.HasPrefix(line, "-") || strings.HasPrefix(line, "@") {
-			sb.WriteString(line)
-			sb.WriteString("\n")
-		}
-	}
-	fmt.Fprint(cmd.OutOrStdout(), sb.String())
+	fmt.Fprint(cmd.OutOrStdout(), text)
 	return nil
 }
 

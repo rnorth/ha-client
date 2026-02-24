@@ -73,16 +73,18 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// SaveToKeychain saves credentials to OS keychain, falling back to config file.
-// "Atomic" here means all-or-nothing at the application level: if either keychain
-// write fails (e.g. no keychain available in CI/headless environments) we fall back
-// to the config file for both values, so we never end up with server in the keychain
-// but token missing (or vice versa).
+// SaveToKeychain saves credentials to the OS keychain, falling back to the
+// config file if the keychain is unavailable (e.g. CI/headless environments).
+// The two writes are treated as all-or-nothing: if the token write fails after
+// the server write succeeded, we delete the server entry before falling back so
+// we never leave partial credentials in the keychain.
 func SaveToKeychain(server, token string) error {
-	serverErr := keyring.Set(keychainService, keychainServer, server)
-	tokenErr := keyring.Set(keychainService, keychainToken, token)
-	if serverErr != nil || tokenErr != nil {
-		// Keychain unavailable or partial failure — fall back to file
+	if err := keyring.Set(keychainService, keychainServer, server); err != nil {
+		return SaveToFile(server, token, DefaultConfigPath())
+	}
+	if err := keyring.Set(keychainService, keychainToken, token); err != nil {
+		// Roll back the server write so the keychain is not left half-populated.
+		_ = keyring.Delete(keychainService, keychainServer)
 		return SaveToFile(server, token, DefaultConfigPath())
 	}
 	return nil

@@ -181,16 +181,16 @@ func (c *WSClient) SubscribeEvents(eventType string, handler func(json.RawMessag
 		return err
 	}
 
-	// Read the subscription confirmation while still holding mu so no other
-	// send() call can write or read between our subscribe command and its ACK.
+	// Read the ACK while holding mu — same reason as send(): we own the
+	// connection until we've matched this command to its response.
 	var ack WSMessage
 	if err := c.conn.ReadJSON(&ack); err != nil {
 		c.mu.Unlock()
 		return err
 	}
-	// Release the lock before entering the event loop: the loop only reads from
-	// the connection and never interacts with other callers, so holding mu would
-	// deadlock any concurrent send() call for the lifetime of the subscription.
+	// After the ACK, HA pushes events unprompted, so there is no more
+	// request/response pairing to protect. Release mu so the caller is not
+	// locked out for the (potentially indefinite) lifetime of the stream.
 	c.mu.Unlock()
 	if !ack.Success {
 		if ack.Error != nil {

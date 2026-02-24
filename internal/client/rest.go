@@ -3,12 +3,17 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 )
+
+// ErrNotFound is returned when the requested resource does not exist (HTTP 404).
+// Callers can test for it with errors.Is rather than matching error strings.
+var ErrNotFound = errors.New("not found")
 
 type RESTClient struct {
 	baseURL string
@@ -43,7 +48,7 @@ func (c *RESTClient) get(path string, out interface{}) error {
 		return fmt.Errorf("unauthorized: check your token")
 	}
 	if resp.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("not found")
+		return ErrNotFound
 	}
 	if resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
