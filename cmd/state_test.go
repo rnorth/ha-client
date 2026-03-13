@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/rnorth/ha-client/internal/client"
@@ -43,4 +45,35 @@ func TestStateGet(t *testing.T) {
 
 	rootCmd.SetArgs([]string{"state", "get", "light.desk", "-o", "json"})
 	require.NoError(t, rootCmd.Execute())
+}
+
+func TestStateList_DomainFilter(t *testing.T) {
+	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
+		"/api/states": func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewEncoder(w).Encode([]client.State{
+				{EntityID: "light.desk", State: "on"},
+				{EntityID: "switch.fan", State: "off"},
+				{EntityID: "light.bedroom", State: "off"},
+			})
+		},
+	})
+	defer srv.Close()
+
+	t.Setenv("HASS_SERVER", srv.URL)
+	t.Setenv("HASS_TOKEN", "test-token")
+	t.Cleanup(func() { stateListDomain = "" })
+
+	r, w, _ := os.Pipe()
+	origStdout := os.Stdout
+	os.Stdout = w
+	t.Cleanup(func() { os.Stdout = origStdout })
+
+	rootCmd.SetArgs([]string{"state", "list", "--domain", "light", "-o", "json"})
+	require.NoError(t, rootCmd.Execute())
+
+	w.Close()
+	out, _ := io.ReadAll(r)
+	assert.Contains(t, string(out), "light.desk")
+	assert.Contains(t, string(out), "light.bedroom")
+	assert.NotContains(t, string(out), "switch.fan")
 }

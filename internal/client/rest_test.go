@@ -86,12 +86,37 @@ func TestCallAction(t *testing.T) {
 	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPost, r.Method)
 		assert.Equal(t, "/api/services/light/turn_on", r.URL.Path)
+		assert.Empty(t, r.URL.RawQuery)
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode([]client.State{})
+		_ = json.NewEncoder(w).Encode([]client.State{
+			{EntityID: "light.desk", State: "on"},
+		})
 	})
 
-	err := c.CallAction("light", "turn_on", map[string]interface{}{"entity_id": "light.desk"})
+	resp, err := c.CallAction("light", "turn_on", map[string]interface{}{"entity_id": "light.desk"}, false)
 	require.NoError(t, err)
+	assert.Len(t, resp.ChangedStates, 1)
+	assert.Equal(t, "light.desk", resp.ChangedStates[0].EntityID)
+	assert.Nil(t, resp.ServiceResponse)
+}
+
+func TestCallAction_ReturnResponse(t *testing.T) {
+	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/api/services/weather/get_forecasts", r.URL.Path)
+		assert.Equal(t, "return_response", r.URL.RawQuery)
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(client.ActionResponse{
+			ChangedStates:   []client.State{},
+			ServiceResponse: map[string]interface{}{"weather.home": map[string]interface{}{"forecast": "sunny"}},
+		})
+	})
+
+	resp, err := c.CallAction("weather", "get_forecasts", map[string]interface{}{"entity_id": "weather.home"}, true)
+	require.NoError(t, err)
+	assert.Empty(t, resp.ChangedStates)
+	assert.NotNil(t, resp.ServiceResponse)
+	assert.Equal(t, map[string]interface{}{"forecast": "sunny"}, resp.ServiceResponse["weather.home"])
 }
 
 func TestGetAutomationConfig(t *testing.T) {

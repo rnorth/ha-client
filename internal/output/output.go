@@ -39,10 +39,23 @@ func DetectFormat(override string, stdout *os.File) Format {
 	return FormatJSON
 }
 
+type RenderOption func(*renderConfig)
+type renderConfig struct {
+	noHeaders bool
+}
+
+func WithNoHeaders(v bool) RenderOption {
+	return func(c *renderConfig) { c.noHeaders = v }
+}
+
 // Render writes data to w in the requested format.
 // data must be a slice of structs or a single struct/map.
 // columns is used only for table format; if nil, all exported fields are used.
-func Render(w io.Writer, format Format, data interface{}, columns []string) error {
+func Render(w io.Writer, format Format, data interface{}, columns []string, opts ...RenderOption) error {
+	cfg := &renderConfig{}
+	for _, o := range opts {
+		o(cfg)
+	}
 	switch format {
 	case FormatJSON:
 		enc := json.NewEncoder(w)
@@ -51,7 +64,7 @@ func Render(w io.Writer, format Format, data interface{}, columns []string) erro
 	case FormatYAML:
 		return yaml.NewEncoder(w).Encode(data)
 	case FormatTable:
-		return renderTable(w, data, columns)
+		return renderTable(w, data, columns, cfg)
 	default:
 		return fmt.Errorf("unknown format: %s", format)
 	}
@@ -59,7 +72,7 @@ func Render(w io.Writer, format Format, data interface{}, columns []string) erro
 
 // renderTable prints a kubectl-style columnar table: left-aligned, space-separated,
 // no borders, no cell wrapping. Each row is always exactly one line.
-func renderTable(w io.Writer, data interface{}, columns []string) error {
+func renderTable(w io.Writer, data interface{}, columns []string, cfg *renderConfig) error {
 	v := reflect.ValueOf(data)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -86,7 +99,7 @@ func renderTable(w io.Writer, data interface{}, columns []string) error {
 			rows[i] = extractRow(row, fields)
 		}
 
-		printColumns(w, headers, rows)
+		printColumns(w, headers, rows, cfg.noHeaders)
 		return nil
 	}
 
@@ -100,7 +113,7 @@ func renderTable(w io.Writer, data interface{}, columns []string) error {
 			}
 			rows = append(rows, []string{f.Name, fmt.Sprintf("%v", v.Field(i).Interface())})
 		}
-		printColumns(w, nil, rows)
+		printColumns(w, nil, rows, cfg.noHeaders)
 		return nil
 	}
 
@@ -110,7 +123,7 @@ func renderTable(w io.Writer, data interface{}, columns []string) error {
 
 // printColumns writes a kubectl-style table. headers may be nil (for key/value structs).
 // Column widths are computed from all data so no cell is ever truncated or wrapped.
-func printColumns(w io.Writer, headers []string, rows [][]string) {
+func printColumns(w io.Writer, headers []string, rows [][]string, noHeaders bool) {
 	if len(rows) == 0 {
 		return
 	}
@@ -144,7 +157,7 @@ func printColumns(w io.Writer, headers []string, rows [][]string) {
 		fmt.Fprintln(w)
 	}
 
-	if headers != nil {
+	if headers != nil && !noHeaders {
 		printRow(headers)
 	}
 	for _, row := range rows {

@@ -43,14 +43,15 @@ var actionListCmd = &cobra.Command{
 				})
 			}
 		}
-		return output.Render(os.Stdout, resolveFormat(), rows, nil)
+		return output.Render(os.Stdout, resolveFormat(), rows, nil, renderOpts()...)
 	},
 }
 
 var (
-	actionDataJSONRaw string
-	actionDataFields  []string
-	actionEntityID    string
+	actionDataJSONRaw  string
+	actionDataFields   []string
+	actionEntityID     string
+	actionReturnResponse bool
 )
 
 var actionCallCmd = &cobra.Command{
@@ -65,13 +66,7 @@ Examples:
   ha-client action call light.turn_on --data-json '{"transition":5}' -d brightness_pct=80 --entity_id=light.desk`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := resolveConfig()
-		if err != nil {
-			return err
-		}
-		c := client.NewRESTClient(cfg.Server, cfg.Token)
-
-		// Parse "domain.action"
+		// Validate inputs before making any network calls.
 		parts := splitDomainAction(args[0])
 		if parts == nil {
 			return fmt.Errorf("invalid action format %q: expected domain.action (e.g. light.turn_on)", args[0])
@@ -82,10 +77,23 @@ Examples:
 			return err
 		}
 
-		if err := c.CallAction(parts[0], parts[1], data); err != nil {
+		cfg, err := resolveConfig()
+		if err != nil {
 			return err
 		}
-		fmt.Fprintln(os.Stderr, "Action called successfully.")
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
+
+		resp, err := c.CallAction(parts[0], parts[1], data, actionReturnResponse)
+		if err != nil {
+			return err
+		}
+		if actionReturnResponse && resp.ServiceResponse != nil {
+			return output.Render(cmd.OutOrStdout(), resolveFormat(), resp.ServiceResponse, nil, renderOpts()...)
+		}
+		if len(resp.ChangedStates) > 0 {
+			return output.Render(cmd.OutOrStdout(), resolveFormat(), resp.ChangedStates, []string{"EntityID", "State"}, renderOpts()...)
+		}
+		info("Action called successfully.")
 		return nil
 	},
 }
@@ -134,6 +142,7 @@ func init() {
 	actionCallCmd.Flags().StringVar(&actionDataJSONRaw, "data-json", "", "raw JSON data payload")
 	actionCallCmd.Flags().StringArrayVarP(&actionDataFields, "data", "d", nil, "data field as key=value (repeatable)")
 	actionCallCmd.Flags().StringVar(&actionEntityID, "entity_id", "", "entity ID to target (shorthand for -d entity_id=...)")
+	actionCallCmd.Flags().BoolVar(&actionReturnResponse, "return-response", false, "return service response data (for actions that support it)")
 	actionCmd.AddCommand(actionListCmd, actionCallCmd)
 	rootCmd.AddCommand(actionCmd)
 }

@@ -78,6 +78,17 @@ func TestTableOutput(t *testing.T) {
 	assert.NotContains(t, buf.String(), "|")
 }
 
+func TestTableOutput_NoHeaders(t *testing.T) {
+	var buf bytes.Buffer
+	data := []item{{"light.desk", "on"}}
+	err := output.Render(&buf, output.FormatTable, data, nil, output.WithNoHeaders(true))
+	require.NoError(t, err)
+	lines := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
+	assert.Len(t, lines, 1) // data only, no header
+	assert.Contains(t, lines[0], "light.desk")
+	assert.NotContains(t, buf.String(), "NAME")
+}
+
 func TestTableColumnHeadersUseJSONTags(t *testing.T) {
 	// When explicit Go field names are given as column overrides, the header
 	// must use the JSON tag (HA-familiar) not the Go field name.

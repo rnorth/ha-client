@@ -1,19 +1,24 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/rnorth/ha-client/internal/client"
 	"github.com/rnorth/ha-client/internal/config"
+	clierrors "github.com/rnorth/ha-client/internal/errors"
 	"github.com/rnorth/ha-client/internal/output"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var (
 	outputFormat string
 	serverFlag   string
 	tokenFlag    string
+	quietMode    bool
+	noHeaders    bool
 )
 
 var rootCmd = &cobra.Command{
@@ -24,8 +29,17 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		ce := clierrors.Classify(err)
+
+		if !term.IsTerminal(int(os.Stderr.Fd())) {
+			// Structured JSON error for agents/pipes
+			errObj := map[string]string{"error": ce.Error(), "code": ce.Code}
+			data, _ := json.Marshal(errObj)
+			fmt.Fprintln(os.Stderr, string(data))
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		os.Exit(ce.ExitCode)
 	}
 }
 
@@ -62,9 +76,21 @@ func newWSClient() (*client.WSClient, error) {
 	return client.NewWSClient(cfg.Server, cfg.Token)
 }
 
+func renderOpts() []output.RenderOption {
+	return []output.RenderOption{output.WithNoHeaders(noHeaders)}
+}
+
+func info(format string, a ...interface{}) {
+	if !quietMode {
+		fmt.Fprintf(os.Stderr, format+"\n", a...)
+	}
+}
+
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "", "output format: table, json, yaml (default: auto-detect TTY)")
 	rootCmd.PersistentFlags().StringVar(&serverFlag, "server", "", "HA server URL (overrides config/env)")
 	rootCmd.PersistentFlags().StringVar(&tokenFlag, "token", "", "HA access token (overrides config/env)")
+	rootCmd.PersistentFlags().BoolVarP(&quietMode, "quiet", "q", false, "suppress informational messages on stderr")
+	rootCmd.PersistentFlags().BoolVar(&noHeaders, "no-headers", false, "omit table headers (only affects table output)")
 	rootCmd.Version = "0.1.0"
 }

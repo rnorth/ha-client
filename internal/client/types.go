@@ -65,6 +65,11 @@ type EntityEntry struct {
 	UniqueID   string  `json:"unique_id,omitempty" yaml:"unique_id,omitempty"`
 }
 
+type ActionResponse struct {
+	ChangedStates   []State                `json:"changed_states"`
+	ServiceResponse map[string]interface{} `json:"service_response,omitempty"`
+}
+
 type WSMessage struct {
 	ID      int             `json:"id,omitempty"`
 	Type    string          `json:"type"`

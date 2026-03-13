@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/rnorth/ha-client/internal/client"
 	"github.com/rnorth/ha-client/internal/output"
@@ -18,6 +19,12 @@ var stateCmd = &cobra.Command{
 var stateListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all entity states",
+	Long: `List all entity states.
+
+Examples:
+  ha-client state list
+  ha-client state list -o json
+  ha-client state list -o json | jq '.[] | select(.entity_id | startswith("light."))'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := resolveConfig()
 		if err != nil {
@@ -28,13 +35,28 @@ var stateListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), states, []string{"EntityID", "State", "LastUpdated"})
+		if stateListDomain != "" {
+			prefix := stateListDomain + "."
+			filtered := states[:0]
+			for _, s := range states {
+				if strings.HasPrefix(s.EntityID, prefix) {
+					filtered = append(filtered, s)
+				}
+			}
+			states = filtered
+		}
+		return output.Render(os.Stdout, resolveFormat(), states, []string{"EntityID", "State", "LastUpdated"}, renderOpts()...)
 	},
 }
 
 var stateGetCmd = &cobra.Command{
 	Use:   "get <entity_id>",
 	Short: "Get state of an entity",
+	Long: `Get the current state of a specific entity.
+
+Examples:
+  ha-client state get light.desk
+  ha-client state get sensor.temperature -o json`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := resolveConfig()
@@ -46,7 +68,7 @@ var stateGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), state, nil)
+		return output.Render(os.Stdout, resolveFormat(), state, nil, renderOpts()...)
 	},
 }
 
@@ -65,37 +87,44 @@ var stateDescribeCmd = &cobra.Command{
 			return err
 		}
 		// Always render describe as JSON/YAML (attributes map doesn't render well in table)
-		return output.Render(os.Stdout, resolveDescribeFormat(), state, nil)
+		return output.Render(os.Stdout, resolveDescribeFormat(), state, nil, renderOpts()...)
 	},
 }
 
 var stateSetCmd = &cobra.Command{
 	Use:   "set <entity_id> <state>",
 	Short: "Set the state of an entity",
+	Long: `Set the state of an entity, optionally with attributes.
+
+Examples:
+  ha-client state set input_boolean.guest_mode on
+  ha-client state set sensor.manual_temp 22.5 --attributes '{"unit_of_measurement":"°C"}'`,
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := resolveConfig()
-		if err != nil {
-			return err
-		}
-		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		var attrs map[string]interface{}
 		if attrJSON != "" {
 			if err := json.Unmarshal([]byte(attrJSON), &attrs); err != nil {
 				return fmt.Errorf("invalid --attributes JSON: %w", err)
 			}
 		}
+		cfg, err := resolveConfig()
+		if err != nil {
+			return err
+		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		state, err := c.SetState(args[0], args[1], attrs)
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), state, nil)
+		return output.Render(os.Stdout, resolveFormat(), state, nil, renderOpts()...)
 	},
 }
 
 var attrJSON string
+var stateListDomain string
 
 func init() {
+	stateListCmd.Flags().StringVar(&stateListDomain, "domain", "", "filter by entity domain (e.g. light, sensor, switch)")
 	stateSetCmd.Flags().StringVar(&attrJSON, "attributes", "", "JSON attributes to set alongside the state")
 	stateCmd.AddCommand(stateListCmd, stateGetCmd, stateDescribeCmd, stateSetCmd)
 	rootCmd.AddCommand(stateCmd)
