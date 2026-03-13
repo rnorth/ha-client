@@ -58,7 +58,7 @@ func TestDeviceList_AreaFilter(t *testing.T) {
 	rootCmd.SetArgs([]string{"device", "list", "--area", "living_room", "-o", "json"})
 	require.NoError(t, rootCmd.Execute())
 
-	w.Close()
+	_ = w.Close()
 	out, _ := io.ReadAll(r)
 	assert.Contains(t, string(out), "Bulb")
 	assert.NotContains(t, string(out), "Fan")

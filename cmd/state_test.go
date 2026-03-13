@@ -50,7 +50,7 @@ func TestStateGet(t *testing.T) {
 func TestStateList_DomainFilter(t *testing.T) {
 	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
 		"/api/states": func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode([]client.State{
+			_ = json.NewEncoder(w).Encode([]client.State{
 				{EntityID: "light.desk", State: "on"},
 				{EntityID: "switch.fan", State: "off"},
 				{EntityID: "light.bedroom", State: "off"},

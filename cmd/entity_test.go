@@ -57,7 +57,7 @@ func TestEntityList_DomainFilter(t *testing.T) {
 	rootCmd.SetArgs([]string{"entity", "list", "--domain", "light", "-o", "json"})
 	require.NoError(t, rootCmd.Execute())
 
-	w.Close()
+	_ = w.Close()
 	out, _ := io.ReadAll(r)
 	assert.Contains(t, string(out), "light.desk")
 	assert.NotContains(t, string(out), "switch.fan")
