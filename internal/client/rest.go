@@ -57,38 +57,46 @@ func (c *RESTClient) get(path string, out interface{}) error {
 	return json.NewDecoder(resp.Body).Decode(out)
 }
 
-func (c *RESTClient) post(path string, body interface{}, out interface{}) error {
+func (c *RESTClient) postRaw(path string, body interface{}) ([]byte, error) {
 	var bodyReader io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		bodyReader = bytes.NewReader(data)
 	}
 
 	req, err := http.NewRequest(http.MethodPost, c.baseURL+path, bodyReader)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+c.token)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return fmt.Errorf("request failed: %w", err)
+		return nil, fmt.Errorf("request failed: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return fmt.Errorf("unauthorized: check your token")
+		return nil, fmt.Errorf("unauthorized: check your token")
 	}
 	if resp.StatusCode >= 300 {
 		b, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(b))
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(b))
+	}
+	return io.ReadAll(resp.Body)
+}
+
+func (c *RESTClient) post(path string, body interface{}, out interface{}) error {
+	raw, err := c.postRaw(path, body)
+	if err != nil {
+		return err
 	}
 	if out != nil {
-		return json.NewDecoder(resp.Body).Decode(out)
+		return json.Unmarshal(raw, out)
 	}
 	return nil
 }
@@ -134,4 +142,14 @@ func (c *RESTClient) GetAutomationConfig(automationID string) (map[string]interf
 
 func (c *RESTClient) SaveAutomationConfig(automationID string, cfg map[string]interface{}) error {
 	return c.post("/api/config/automation/config/"+automationID, cfg, nil)
+}
+
+// RenderTemplate evaluates a Jinja template server-side via POST /api/template.
+func (c *RESTClient) RenderTemplate(template string) (string, error) {
+	body := map[string]string{"template": template}
+	raw, err := c.postRaw("/api/template", body)
+	if err != nil {
+		return "", err
+	}
+	return string(raw), nil
 }
