@@ -28,6 +28,15 @@ Examples:
 		if err != nil {
 			return err
 		}
+		if deviceListArea != "" {
+			filtered := devices[:0]
+			for _, d := range devices {
+				if d.AreaID == deviceListArea {
+					filtered = append(filtered, d)
+				}
+			}
+			devices = filtered
+		}
 		return output.Render(os.Stdout, resolveFormat(), devices, []string{"ID", "Name", "Manufacturer", "Model", "AreaID"}, renderOpts()...)
 	},
 }
@@ -82,7 +91,10 @@ var deviceDescribeCmd = &cobra.Command{
 	},
 }
 
+var deviceListArea string
+
 func init() {
+	deviceListCmd.Flags().StringVar(&deviceListArea, "area", "", "filter by area ID")
 	deviceCmd.AddCommand(deviceListCmd, deviceGetCmd, deviceDescribeCmd)
 	rootCmd.AddCommand(deviceCmd)
 }

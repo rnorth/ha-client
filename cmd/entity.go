@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
 	"github.com/rnorth/ha-client/internal/output"
 	"github.com/spf13/cobra"
@@ -26,6 +27,16 @@ Examples:
 		entities, err := wsc.ListEntities()
 		if err != nil {
 			return err
+		}
+		if entityListDomain != "" {
+			prefix := entityListDomain + "."
+			filtered := entities[:0]
+			for _, e := range entities {
+				if strings.HasPrefix(e.EntityID, prefix) {
+					filtered = append(filtered, e)
+				}
+			}
+			entities = filtered
 		}
 		return output.Render(os.Stdout, resolveFormat(), entities, []string{"EntityID", "Name", "Platform", "AreaID"}, renderOpts()...)
 	},
@@ -72,7 +83,10 @@ var entityDescribeCmd = &cobra.Command{
 	},
 }
 
+var entityListDomain string
+
 func init() {
+	entityListCmd.Flags().StringVar(&entityListDomain, "domain", "", "filter by entity domain (e.g. light, sensor)")
 	entityCmd.AddCommand(entityListCmd, entityGetCmd, entityDescribeCmd)
 	rootCmd.AddCommand(entityCmd)
 }

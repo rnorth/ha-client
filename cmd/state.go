@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/rnorth/ha-client/internal/client"
 	"github.com/rnorth/ha-client/internal/output"
@@ -33,6 +34,16 @@ Examples:
 		states, err := c.ListStates()
 		if err != nil {
 			return err
+		}
+		if stateListDomain != "" {
+			prefix := stateListDomain + "."
+			filtered := states[:0]
+			for _, s := range states {
+				if strings.HasPrefix(s.EntityID, prefix) {
+					filtered = append(filtered, s)
+				}
+			}
+			states = filtered
 		}
 		return output.Render(os.Stdout, resolveFormat(), states, []string{"EntityID", "State", "LastUpdated"}, renderOpts()...)
 	},
@@ -110,8 +121,10 @@ Examples:
 }
 
 var attrJSON string
+var stateListDomain string
 
 func init() {
+	stateListCmd.Flags().StringVar(&stateListDomain, "domain", "", "filter by entity domain (e.g. light, sensor, switch)")
 	stateSetCmd.Flags().StringVar(&attrJSON, "attributes", "", "JSON attributes to set alongside the state")
 	stateCmd.AddCommand(stateListCmd, stateGetCmd, stateDescribeCmd, stateSetCmd)
 	rootCmd.AddCommand(stateCmd)
