@@ -23,7 +23,7 @@ var areaListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), areas, nil)
+		return output.Render(os.Stdout, resolveFormat(), areas, nil, renderOpts()...)
 	},
 }
 
@@ -43,7 +43,7 @@ var areaGetCmd = &cobra.Command{
 		}
 		for _, a := range areas {
 			if a.AreaID == args[0] || a.Name == args[0] {
-				return output.Render(os.Stdout, resolveFormat(), a, nil)
+				return output.Render(os.Stdout, resolveFormat(), a, nil, renderOpts()...)
 			}
 		}
 		return fmt.Errorf("area %q not found", args[0])
@@ -64,7 +64,7 @@ var areaCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), area, nil)
+		return output.Render(os.Stdout, resolveFormat(), area, nil, renderOpts()...)
 	},
 }
 

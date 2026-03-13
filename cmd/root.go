@@ -18,6 +18,7 @@ var (
 	serverFlag   string
 	tokenFlag    string
 	quietMode    bool
+	noHeaders    bool
 )
 
 var rootCmd = &cobra.Command{
@@ -75,6 +76,10 @@ func newWSClient() (*client.WSClient, error) {
 	return client.NewWSClient(cfg.Server, cfg.Token)
 }
 
+func renderOpts() []output.RenderOption {
+	return []output.RenderOption{output.WithNoHeaders(noHeaders)}
+}
+
 func info(format string, a ...interface{}) {
 	if !quietMode {
 		fmt.Fprintf(os.Stderr, format+"\n", a...)
@@ -86,5 +91,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&serverFlag, "server", "", "HA server URL (overrides config/env)")
 	rootCmd.PersistentFlags().StringVar(&tokenFlag, "token", "", "HA access token (overrides config/env)")
 	rootCmd.PersistentFlags().BoolVarP(&quietMode, "quiet", "q", false, "suppress informational messages on stderr")
+	rootCmd.PersistentFlags().BoolVar(&noHeaders, "no-headers", false, "omit table headers (only affects table output)")
 	rootCmd.Version = "0.1.0"
 }

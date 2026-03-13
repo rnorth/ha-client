@@ -43,7 +43,7 @@ var actionListCmd = &cobra.Command{
 				})
 			}
 		}
-		return output.Render(os.Stdout, resolveFormat(), rows, nil)
+		return output.Render(os.Stdout, resolveFormat(), rows, nil, renderOpts()...)
 	},
 }
 
@@ -88,10 +88,10 @@ Examples:
 			return err
 		}
 		if actionReturnResponse && resp.ServiceResponse != nil {
-			return output.Render(cmd.OutOrStdout(), resolveFormat(), resp.ServiceResponse, nil)
+			return output.Render(cmd.OutOrStdout(), resolveFormat(), resp.ServiceResponse, nil, renderOpts()...)
 		}
 		if len(resp.ChangedStates) > 0 {
-			return output.Render(cmd.OutOrStdout(), resolveFormat(), resp.ChangedStates, []string{"EntityID", "State"})
+			return output.Render(cmd.OutOrStdout(), resolveFormat(), resp.ChangedStates, []string{"EntityID", "State"}, renderOpts()...)
 		}
 		info("Action called successfully.")
 		return nil

@@ -23,7 +23,7 @@ var deviceListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), devices, []string{"ID", "Name", "Manufacturer", "Model", "AreaID"})
+		return output.Render(os.Stdout, resolveFormat(), devices, []string{"ID", "Name", "Manufacturer", "Model", "AreaID"}, renderOpts()...)
 	},
 }
 
@@ -43,7 +43,7 @@ var deviceGetCmd = &cobra.Command{
 		}
 		for _, d := range devices {
 			if d.ID == args[0] || d.Name == args[0] {
-				return output.Render(os.Stdout, resolveFormat(), d, nil)
+				return output.Render(os.Stdout, resolveFormat(), d, nil, renderOpts()...)
 			}
 		}
 		return fmt.Errorf("device %q not found", args[0])
@@ -66,7 +66,7 @@ var deviceDescribeCmd = &cobra.Command{
 		}
 		for _, d := range devices {
 			if d.ID == args[0] || d.Name == args[0] {
-				return output.Render(os.Stdout, resolveDescribeFormat(), d, nil)
+				return output.Render(os.Stdout, resolveDescribeFormat(), d, nil, renderOpts()...)
 			}
 		}
 		return fmt.Errorf("device %q not found", args[0])

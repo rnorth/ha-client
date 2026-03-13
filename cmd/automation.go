@@ -41,7 +41,7 @@ var automationListCmd = &cobra.Command{
 			name, _ := s.Attributes["friendly_name"].(string)
 			rows = append(rows, row{EntityID: s.EntityID, FriendlyName: name, State: s.State})
 		}
-		return output.Render(os.Stdout, resolveFormat(), rows, nil)
+		return output.Render(os.Stdout, resolveFormat(), rows, nil, renderOpts()...)
 	},
 }
 
@@ -59,7 +59,7 @@ var automationGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), state, nil)
+		return output.Render(os.Stdout, resolveFormat(), state, nil, renderOpts()...)
 	},
 }
 
@@ -77,7 +77,7 @@ var automationDescribeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveDescribeFormat(), state, nil)
+		return output.Render(os.Stdout, resolveDescribeFormat(), state, nil, renderOpts()...)
 	},
 }
 
@@ -98,7 +98,7 @@ var automationExportCmd = &cobra.Command{
 			return err
 		}
 
-		return output.Render(cmd.OutOrStdout(), resolveDescribeFormat(), cfg, nil)
+		return output.Render(cmd.OutOrStdout(), resolveDescribeFormat(), cfg, nil, renderOpts()...)
 	},
 }
 

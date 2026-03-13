@@ -28,7 +28,7 @@ var stateListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), states, []string{"EntityID", "State", "LastUpdated"})
+		return output.Render(os.Stdout, resolveFormat(), states, []string{"EntityID", "State", "LastUpdated"}, renderOpts()...)
 	},
 }
 
@@ -46,7 +46,7 @@ var stateGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), state, nil)
+		return output.Render(os.Stdout, resolveFormat(), state, nil, renderOpts()...)
 	},
 }
 
@@ -65,7 +65,7 @@ var stateDescribeCmd = &cobra.Command{
 			return err
 		}
 		// Always render describe as JSON/YAML (attributes map doesn't render well in table)
-		return output.Render(os.Stdout, resolveDescribeFormat(), state, nil)
+		return output.Render(os.Stdout, resolveDescribeFormat(), state, nil, renderOpts()...)
 	},
 }
 
@@ -89,7 +89,7 @@ var stateSetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), state, nil)
+		return output.Render(os.Stdout, resolveFormat(), state, nil, renderOpts()...)
 	},
 }
 

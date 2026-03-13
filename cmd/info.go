@@ -21,7 +21,7 @@ var infoCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), info, nil)
+		return output.Render(os.Stdout, resolveFormat(), info, nil, renderOpts()...)
 	},
 }
 

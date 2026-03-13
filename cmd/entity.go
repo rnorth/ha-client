@@ -22,7 +22,7 @@ var entityListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), entities, []string{"EntityID", "Name", "Platform", "AreaID"})
+		return output.Render(os.Stdout, resolveFormat(), entities, []string{"EntityID", "Name", "Platform", "AreaID"}, renderOpts()...)
 	},
 }
 
@@ -40,7 +40,7 @@ var entityGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveFormat(), entity, nil)
+		return output.Render(os.Stdout, resolveFormat(), entity, nil, renderOpts()...)
 	},
 }
 
@@ -58,7 +58,7 @@ var entityDescribeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return output.Render(os.Stdout, resolveDescribeFormat(), entity, nil)
+		return output.Render(os.Stdout, resolveDescribeFormat(), entity, nil, renderOpts()...)
 	},
 }
 
