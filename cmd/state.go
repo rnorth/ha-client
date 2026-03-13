@@ -101,17 +101,17 @@ Examples:
   ha-client state set sensor.manual_temp 22.5 --attributes '{"unit_of_measurement":"°C"}'`,
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := resolveConfig()
-		if err != nil {
-			return err
-		}
-		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		var attrs map[string]interface{}
 		if attrJSON != "" {
 			if err := json.Unmarshal([]byte(attrJSON), &attrs); err != nil {
 				return fmt.Errorf("invalid --attributes JSON: %w", err)
 			}
 		}
+		cfg, err := resolveConfig()
+		if err != nil {
+			return err
+		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		state, err := c.SetState(args[0], args[1], attrs)
 		if err != nil {
 			return err
