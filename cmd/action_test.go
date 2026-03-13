@@ -191,7 +191,7 @@ func TestActionCall_ChangedStates(t *testing.T) {
 func TestActionCall_QuietMode(t *testing.T) {
 	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
 		"/api/services/light/turn_on": func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode([]client.State{})
+			_ = json.NewEncoder(w).Encode([]client.State{})
 		},
 	})
 	defer srv.Close()

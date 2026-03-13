@@ -66,13 +66,7 @@ Examples:
   ha-client action call light.turn_on --data-json '{"transition":5}' -d brightness_pct=80 --entity_id=light.desk`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := resolveConfig()
-		if err != nil {
-			return err
-		}
-		c := client.NewRESTClient(cfg.Server, cfg.Token)
-
-		// Parse "domain.action"
+		// Validate inputs before making any network calls.
 		parts := splitDomainAction(args[0])
 		if parts == nil {
 			return fmt.Errorf("invalid action format %q: expected domain.action (e.g. light.turn_on)", args[0])
@@ -82,6 +76,12 @@ Examples:
 		if err != nil {
 			return err
 		}
+
+		cfg, err := resolveConfig()
+		if err != nil {
+			return err
+		}
+		c := client.NewRESTClient(cfg.Server, cfg.Token)
 
 		resp, err := c.CallAction(parts[0], parts[1], data, actionReturnResponse)
 		if err != nil {
