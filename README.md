@@ -86,7 +86,8 @@ Shows the Home Assistant version, location name, timezone, and unit system.
 
 ```bash
 ha-client state list
-ha-client state list -o json          # machine-readable output
+ha-client state list -o json              # machine-readable output
+ha-client state list --domain light       # filter by domain
 ```
 
 ```bash
@@ -94,7 +95,7 @@ ha-client state get light.desk
 ```
 
 ```bash
-ha-client state describe light.desk   # full state including all attributes (YAML)
+ha-client state describe light.desk       # full state including all attributes (YAML)
 ```
 
 ```bash
@@ -119,6 +120,19 @@ ha-client action call light.turn_on --data-json '{"entity_id":"light.desk","effe
 ```
 
 Actions are what Home Assistant calls "services". The format is `<domain>.<action>`.
+
+When an action changes entity states, the updated states are returned:
+
+```bash
+ha-client action call light.turn_on --entity_id=light.desk -o json
+# → [{"entity_id":"light.desk","state":"on",...}]
+```
+
+Some actions (e.g. `conversation.process`, `calendar.list_events`) return response data. Use `--return-response` to retrieve it:
+
+```bash
+ha-client action call conversation.process --return-response -d text="what lights are on?"
+```
 
 ---
 
@@ -149,8 +163,9 @@ ha-client area delete garage
 
 ```bash
 ha-client device list
-ha-client device get abc123           # by device_id or name
-ha-client device describe abc123      # full details (YAML)
+ha-client device list --area living_room  # filter by area ID
+ha-client device get abc123               # by device_id or name
+ha-client device describe abc123          # full details (YAML)
 ```
 
 The `list` output includes `ID`, `NAME`, `MANUFACTURER`, `MODEL`, and `AREA_ID`.
@@ -161,6 +176,7 @@ The `list` output includes `ID`, `NAME`, `MANUFACTURER`, `MODEL`, and `AREA_ID`.
 
 ```bash
 ha-client entity list
+ha-client entity list --domain light                           # filter by domain
 ha-client entity list -o json | jq '.[] | select(.platform == "hue")'
 ha-client entity get light.desk
 ha-client entity describe light.desk  # full registry entry (YAML)
@@ -192,6 +208,27 @@ ha-client automation apply -f automation.yaml --dry-run  # Preview changes witho
 
 ---
 
+### `template` — evaluate Jinja templates
+
+Evaluates a Jinja template server-side (the same engine used by Developer Tools → Template):
+
+```bash
+ha-client template eval '{{ states("sensor.living_room_temperature") }}'
+echo '{{ now().strftime("%H:%M") }}' | ha-client template eval -
+ha-client template eval -f my_template.j2
+```
+
+---
+
+### `version` — version information
+
+```bash
+ha-client version           # table at TTY
+ha-client version -o json   # structured output for scripts/agents
+```
+
+---
+
 ## Output formats
 
 All commands support three output formats controlled by `-o` / `--output`:
@@ -213,6 +250,23 @@ ha-client state list | jq '.[].entity_id'   # → entity IDs, one per line
 ```
 
 `describe` subcommands always use YAML when at a terminal (better for nested attributes), and JSON when piped.
+
+### Global flags
+
+| Flag | Description |
+|------|-------------|
+| `--no-headers` | Omit column headers from table output |
+| `-q` / `--quiet` | Suppress informational messages on stderr |
+
+### Error output
+
+When stderr is not a TTY (piped/redirected), errors are emitted as JSON for easy parsing by scripts and agents:
+
+```json
+{"error":"unauthorized: check your token","code":"auth_failed"}
+```
+
+Exit codes: `1` general, `2` usage error, `3` auth failure, `4` not found, `5` server error.
 
 ---
 
