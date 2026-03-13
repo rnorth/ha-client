@@ -21,6 +21,12 @@ var eventTypeFilter string
 var eventWatchCmd = &cobra.Command{
 	Use:   "watch",
 	Short: "Stream events in real-time (Ctrl+C to stop)",
+	Long: `Stream Home Assistant events in real-time. Press Ctrl+C to stop.
+
+Examples:
+  ha-client event watch
+  ha-client event watch --type state_changed
+  ha-client event watch --type automation_triggered`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := resolveConfig()
 		if err != nil {

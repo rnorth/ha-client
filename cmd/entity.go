@@ -12,6 +12,11 @@ var entityCmd = &cobra.Command{Use: "entity", Short: "Manage the entity registry
 var entityListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all registered entities",
+	Long: `List all registered entities.
+
+Examples:
+  ha-client entity list
+  ha-client entity list -o json | jq '.[] | select(.platform == "hue")'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		wsc, err := newWSClient()
 		if err != nil {
@@ -29,6 +34,11 @@ var entityListCmd = &cobra.Command{
 var entityGetCmd = &cobra.Command{
 	Use:   "get <entity_id>",
 	Short: "Get an entity from the registry",
+	Long: `Get details for a specific entity from the registry.
+
+Examples:
+  ha-client entity get light.desk
+  ha-client entity get light.desk -o json`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		wsc, err := newWSClient()

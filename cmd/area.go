@@ -13,6 +13,11 @@ var areaCmd = &cobra.Command{Use: "area", Short: "Manage Home Assistant areas"}
 var areaListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all areas",
+	Long: `List all areas defined in Home Assistant.
+
+Examples:
+  ha-client area list
+  ha-client area list -o json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		wsc, err := newWSClient()
 		if err != nil {
@@ -30,6 +35,11 @@ var areaListCmd = &cobra.Command{
 var areaGetCmd = &cobra.Command{
 	Use:   "get <area_id>",
 	Short: "Get a specific area by ID or name",
+	Long: `Get a specific area by ID or name.
+
+Examples:
+  ha-client area get living_room
+  ha-client area get "Living Room"`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		wsc, err := newWSClient()
@@ -53,6 +63,10 @@ var areaGetCmd = &cobra.Command{
 var areaCreateCmd = &cobra.Command{
 	Use:   "create <name>",
 	Short: "Create a new area",
+	Long: `Create a new area in Home Assistant.
+
+Examples:
+  ha-client area create "Guest Room"`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		wsc, err := newWSClient()
@@ -71,6 +85,10 @@ var areaCreateCmd = &cobra.Command{
 var areaDeleteCmd = &cobra.Command{
 	Use:   "delete <area_id>",
 	Short: "Delete an area",
+	Long: `Delete an area by ID.
+
+Examples:
+  ha-client area delete guest_room`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		wsc, err := newWSClient()

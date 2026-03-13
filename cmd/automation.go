@@ -18,6 +18,11 @@ var automationCmd = &cobra.Command{Use: "automation", Short: "Manage Home Assist
 var automationListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all automations",
+	Long: `List all automations with their current state.
+
+Examples:
+  ha-client automation list
+  ha-client automation list -o json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := resolveConfig()
 		if err != nil {
@@ -84,6 +89,12 @@ var automationDescribeCmd = &cobra.Command{
 var automationExportCmd = &cobra.Command{
 	Use:   "export <entity_id>",
 	Short: "Export automation config as YAML",
+	Long: `Export an automation's configuration from HA storage as YAML.
+
+Examples:
+  ha-client automation export automation.morning_routine
+  ha-client automation export morning_routine -o json
+  ha-client automation export automation.morning_routine > morning.yaml`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		wsc, err := newWSClient()
@@ -132,6 +143,20 @@ var automationApplyDryRun bool
 var automationApplyCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "Apply (create or update) an automation from a YAML file",
+	Long: `Apply an automation configuration from a YAML file.
+
+The YAML must contain an 'id' field (the HA storage ID, e.g. "morning-routine"),
+which is the primary key used to identify the automation. If an automation with
+that ID already exists it is updated; otherwise a new automation is created.
+Omitting the 'id' field is an error.
+
+Note: the storage ID is not the entity ID. The entity ID (e.g.
+"automation.morning_routine") is derived by HA from the alias and may change;
+the storage ID is stable and set by you.
+
+Examples:
+  ha-client automation apply -f morning_routine.yaml
+  ha-client automation apply -f morning_routine.yaml --dry-run`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		data, err := os.ReadFile(automationApplyFile)
 		if err != nil {

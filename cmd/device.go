@@ -13,6 +13,11 @@ var deviceCmd = &cobra.Command{Use: "device", Short: "Manage Home Assistant devi
 var deviceListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all devices",
+	Long: `List all devices registered in Home Assistant.
+
+Examples:
+  ha-client device list
+  ha-client device list -o json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		wsc, err := newWSClient()
 		if err != nil {
@@ -30,6 +35,10 @@ var deviceListCmd = &cobra.Command{
 var deviceGetCmd = &cobra.Command{
 	Use:   "get <device_id>",
 	Short: "Get a device by ID or name",
+	Long: `Get a device by ID or name.
+
+Examples:
+  ha-client device get "Smart Bulb"`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		wsc, err := newWSClient()

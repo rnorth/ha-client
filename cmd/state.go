@@ -18,6 +18,12 @@ var stateCmd = &cobra.Command{
 var stateListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all entity states",
+	Long: `List all entity states.
+
+Examples:
+  ha-client state list
+  ha-client state list -o json
+  ha-client state list -o json | jq '.[] | select(.entity_id | startswith("light."))'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := resolveConfig()
 		if err != nil {
@@ -35,6 +41,11 @@ var stateListCmd = &cobra.Command{
 var stateGetCmd = &cobra.Command{
 	Use:   "get <entity_id>",
 	Short: "Get state of an entity",
+	Long: `Get the current state of a specific entity.
+
+Examples:
+  ha-client state get light.desk
+  ha-client state get sensor.temperature -o json`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := resolveConfig()
@@ -72,6 +83,11 @@ var stateDescribeCmd = &cobra.Command{
 var stateSetCmd = &cobra.Command{
 	Use:   "set <entity_id> <state>",
 	Short: "Set the state of an entity",
+	Long: `Set the state of an entity, optionally with attributes.
+
+Examples:
+  ha-client state set input_boolean.guest_mode on
+  ha-client state set sensor.manual_temp 22.5 --attributes '{"unit_of_measurement":"°C"}'`,
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := resolveConfig()
