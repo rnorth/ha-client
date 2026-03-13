@@ -81,7 +81,7 @@ var areaDeleteCmd = &cobra.Command{
 		if err := wsc.DeleteArea(args[0]); err != nil {
 			return err
 		}
-		fmt.Fprintln(os.Stderr, "Area deleted.")
+		info("Area deleted.")
 		return nil
 	},
 }

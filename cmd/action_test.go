@@ -188,6 +188,22 @@ func TestActionCall_ChangedStates(t *testing.T) {
 	assert.Equal(t, "on", states[0].State)
 }
 
+func TestActionCall_QuietMode(t *testing.T) {
+	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
+		"/api/services/light/turn_on": func(w http.ResponseWriter, r *http.Request) {
+			json.NewEncoder(w).Encode([]client.State{})
+		},
+	})
+	defer srv.Close()
+
+	t.Setenv("HASS_SERVER", srv.URL)
+	t.Setenv("HASS_TOKEN", "test-token")
+	t.Cleanup(func() { quietMode = false; actionEntityID = "" })
+
+	rootCmd.SetArgs([]string{"action", "call", "light.turn_on", "--entity_id=light.desk", "-q"})
+	require.NoError(t, rootCmd.Execute())
+}
+
 func TestActionCall_ReturnResponse(t *testing.T) {
 	srv := newMockRESTServer(t, map[string]http.HandlerFunc{
 		"/api/services/weather/get_forecasts": func(w http.ResponseWriter, r *http.Request) {

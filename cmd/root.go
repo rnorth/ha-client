@@ -17,6 +17,7 @@ var (
 	outputFormat string
 	serverFlag   string
 	tokenFlag    string
+	quietMode    bool
 )
 
 var rootCmd = &cobra.Command{
@@ -74,9 +75,16 @@ func newWSClient() (*client.WSClient, error) {
 	return client.NewWSClient(cfg.Server, cfg.Token)
 }
 
+func info(format string, a ...interface{}) {
+	if !quietMode {
+		fmt.Fprintf(os.Stderr, format+"\n", a...)
+	}
+}
+
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "", "output format: table, json, yaml (default: auto-detect TTY)")
 	rootCmd.PersistentFlags().StringVar(&serverFlag, "server", "", "HA server URL (overrides config/env)")
 	rootCmd.PersistentFlags().StringVar(&tokenFlag, "token", "", "HA access token (overrides config/env)")
+	rootCmd.PersistentFlags().BoolVarP(&quietMode, "quiet", "q", false, "suppress informational messages on stderr")
 	rootCmd.Version = "0.1.0"
 }

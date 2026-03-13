@@ -93,7 +93,7 @@ Examples:
 		if len(resp.ChangedStates) > 0 {
 			return output.Render(cmd.OutOrStdout(), resolveFormat(), resp.ChangedStates, []string{"EntityID", "State"})
 		}
-		fmt.Fprintln(os.Stderr, "Action called successfully.")
+		info("Action called successfully.")
 		return nil
 	},
 }

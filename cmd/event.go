@@ -65,7 +65,7 @@ var eventWatchCmd = &cobra.Command{
 
 		select {
 		case <-stop:
-			fmt.Fprintln(os.Stderr, "\nStopped.")
+			info("\nStopped.")
 		case err := <-done:
 			if err != nil {
 				return err

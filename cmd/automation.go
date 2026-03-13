@@ -121,7 +121,7 @@ func automationAction(action string) func(cmd *cobra.Command, args []string) err
 		if _, err := c.CallAction("automation", action, map[string]interface{}{"entity_id": id}, false); err != nil {
 			return err
 		}
-		fmt.Fprintf(os.Stderr, "automation.%s called for %s\n", action, id)
+		info("automation.%s called for %s", action, id)
 		return nil
 	}
 }
@@ -165,7 +165,7 @@ var automationApplyCmd = &cobra.Command{
 		if err := rc.SaveAutomationConfig(autoID, cfg); err != nil {
 			return fmt.Errorf("apply failed: %w", err)
 		}
-		fmt.Fprintf(os.Stderr, "automation %q applied\n", autoID)
+		info("automation %q applied", autoID)
 		return nil
 	},
 }
