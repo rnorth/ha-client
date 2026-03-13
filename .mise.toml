@@ -20,6 +20,10 @@ description = "Build and install to /usr/local/bin"
 depends = ["build"]
 run = "cp ha-client /usr/local/bin/ha-client"
 
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run ./..."
+
 [tasks.release-snapshot]
 description = "Build a snapshot release locally (no publish)"
 run = "goreleaser release --snapshot --clean"
