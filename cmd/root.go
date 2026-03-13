@@ -1,13 +1,16 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/rnorth/ha-client/internal/client"
 	"github.com/rnorth/ha-client/internal/config"
+	clierrors "github.com/rnorth/ha-client/internal/errors"
 	"github.com/rnorth/ha-client/internal/output"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var (
@@ -24,8 +27,17 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		ce := clierrors.Classify(err)
+
+		if !term.IsTerminal(int(os.Stderr.Fd())) {
+			// Structured JSON error for agents/pipes
+			errObj := map[string]string{"error": ce.Error(), "code": ce.Code}
+			data, _ := json.Marshal(errObj)
+			fmt.Fprintln(os.Stderr, string(data))
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		os.Exit(ce.ExitCode)
 	}
 }
 
