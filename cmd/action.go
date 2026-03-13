@@ -48,9 +48,10 @@ var actionListCmd = &cobra.Command{
 }
 
 var (
-	actionDataJSONRaw string
-	actionDataFields  []string
-	actionEntityID    string
+	actionDataJSONRaw  string
+	actionDataFields   []string
+	actionEntityID     string
+	actionReturnResponse bool
 )
 
 var actionCallCmd = &cobra.Command{
@@ -82,8 +83,15 @@ Examples:
 			return err
 		}
 
-		if err := c.CallAction(parts[0], parts[1], data); err != nil {
+		resp, err := c.CallAction(parts[0], parts[1], data, actionReturnResponse)
+		if err != nil {
 			return err
+		}
+		if actionReturnResponse && resp.ServiceResponse != nil {
+			return output.Render(cmd.OutOrStdout(), resolveFormat(), resp.ServiceResponse, nil)
+		}
+		if len(resp.ChangedStates) > 0 {
+			return output.Render(cmd.OutOrStdout(), resolveFormat(), resp.ChangedStates, []string{"EntityID", "State"})
 		}
 		fmt.Fprintln(os.Stderr, "Action called successfully.")
 		return nil
@@ -134,6 +142,7 @@ func init() {
 	actionCallCmd.Flags().StringVar(&actionDataJSONRaw, "data-json", "", "raw JSON data payload")
 	actionCallCmd.Flags().StringArrayVarP(&actionDataFields, "data", "d", nil, "data field as key=value (repeatable)")
 	actionCallCmd.Flags().StringVar(&actionEntityID, "entity_id", "", "entity ID to target (shorthand for -d entity_id=...)")
+	actionCallCmd.Flags().BoolVar(&actionReturnResponse, "return-response", false, "return service response data (for actions that support it)")
 	actionCmd.AddCommand(actionListCmd, actionCallCmd)
 	rootCmd.AddCommand(actionCmd)
 }

@@ -118,7 +118,7 @@ func automationAction(action string) func(cmd *cobra.Command, args []string) err
 		}
 		c := client.NewRESTClient(cfg.Server, cfg.Token)
 		id := automationID(args[0])
-		if err := c.CallAction("automation", action, map[string]interface{}{"entity_id": id}); err != nil {
+		if _, err := c.CallAction("automation", action, map[string]interface{}{"entity_id": id}, false); err != nil {
 			return err
 		}
 		fmt.Fprintf(os.Stderr, "automation.%s called for %s\n", action, id)

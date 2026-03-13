@@ -130,8 +130,26 @@ func (c *RESTClient) ListActions() ([]ActionDomain, error) {
 	return actions, c.get("/api/services", &actions)
 }
 
-func (c *RESTClient) CallAction(domain, action string, data map[string]interface{}) error {
-	return c.post("/api/services/"+domain+"/"+action, data, nil)
+func (c *RESTClient) CallAction(domain, action string, data map[string]interface{}, returnResponse bool) (*ActionResponse, error) {
+	path := "/api/services/" + domain + "/" + action
+	if returnResponse {
+		path += "?return_response"
+	}
+	raw, err := c.postRaw(path, data)
+	if err != nil {
+		return nil, err
+	}
+	resp := &ActionResponse{}
+	if returnResponse {
+		if err := json.Unmarshal(raw, resp); err != nil {
+			return nil, fmt.Errorf("parsing action response: %w", err)
+		}
+	} else {
+		if err := json.Unmarshal(raw, &resp.ChangedStates); err != nil {
+			return nil, fmt.Errorf("parsing changed states: %w", err)
+		}
+	}
+	return resp, nil
 }
 
 // GetAutomationConfig fetches the automation config for the given storage ID (the "id" field in the automation YAML, e.g. "abc-123"), not the entity ID.
